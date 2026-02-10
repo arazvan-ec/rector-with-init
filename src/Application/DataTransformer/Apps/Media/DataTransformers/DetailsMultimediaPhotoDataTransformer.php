@@ -8,7 +8,6 @@ namespace App\Application\DataTransformer\Apps\Media\DataTransformers;
 
 use App\Application\DataTransformer\Apps\Media\MediaDataTransformer;
 use App\Infrastructure\Service\Thumbor;
-use App\Infrastructure\Trait\MultimediaTrait;
 use Ec\Editorial\Domain\Model\Opening;
 use Ec\Multimedia\Domain\Model\ClippingTypes;
 use Ec\Multimedia\Domain\Model\Multimedia\MultimediaPhoto;
@@ -19,8 +18,6 @@ use Ec\Multimedia\Domain\Model\Photo\Photo;
  */
 class DetailsMultimediaPhotoDataTransformer implements MediaDataTransformer
 {
-    use MultimediaTrait;
-
     /** @var string */
     private const WIDTH = 'width';
 

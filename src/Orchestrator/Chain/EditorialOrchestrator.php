@@ -16,7 +16,6 @@ use App\Application\DataTransformer\BodyDataTransformer;
 use App\Ec\Snaapi\Infrastructure\Client\Http\QueryLegacyClient;
 use App\Exception\EditorialNotPublishedYetException;
 use App\Infrastructure\Enum\SitesEnum;
-use App\Infrastructure\Trait\MultimediaTrait;
 use App\Infrastructure\Trait\UrlGeneratorTrait;
 use App\Orchestrator\Chain\Multimedia\MultimediaOrchestratorHandler;
 use App\Orchestrator\Exceptions\OrchestratorTypeNotExistException;
@@ -29,6 +28,9 @@ use Ec\Editorial\Domain\Model\Editorial;
 use Ec\Editorial\Domain\Model\EditorialBlog;
 use Ec\Editorial\Domain\Model\EditorialId;
 use Ec\Editorial\Domain\Model\Multimedia\Multimedia;
+use Ec\Editorial\Domain\Model\Multimedia\MultimediaId;
+use Ec\Editorial\Domain\Model\Multimedia\PhotoExist;
+use Ec\Editorial\Domain\Model\Multimedia\Video;
 use Ec\Editorial\Domain\Model\Multimedia\Widget;
 use Ec\Editorial\Domain\Model\NewsBase;
 use Ec\Editorial\Domain\Model\QueryEditorialClient;
@@ -59,7 +61,6 @@ use Symfony\Component\HttpFoundation\Request;
 class EditorialOrchestrator implements EditorialOrchestratorInterface
 {
     use UrlGeneratorTrait;
-    use MultimediaTrait;
 
     public const ASYNC = true;
     public const TWITTER_TYPES = [EditorialBlog::EDITORIAL_TYPE];
@@ -529,6 +530,22 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
             return $this->multimediaDataTransformer
                 ->write($resolveData['multimedia'], $editorial->multimedia())
                 ->read();
+        }
+
+        return null;
+    }
+
+    private function getMultimediaId(Multimedia $multimedia): ?MultimediaId
+    {
+        if ($multimedia instanceof PhotoExist) {
+            return $multimedia->id();
+        }
+
+        if (
+            ($multimedia instanceof Video || $multimedia instanceof Widget)
+            && ($multimedia->photo() instanceof PhotoExist)
+        ) {
+            return $multimedia->photo()->id();
         }
 
         return null;

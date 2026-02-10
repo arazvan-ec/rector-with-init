@@ -6,11 +6,9 @@
 
 namespace App\Application\DataTransformer\Apps;
 
-use App\Infrastructure\Service\Thumbor;
-use App\Infrastructure\Trait\MultimediaTrait;
+use App\Infrastructure\Service\MultimediaShotService;
 use App\Infrastructure\Trait\UrlGeneratorTrait;
 use Ec\Editorial\Domain\Model\Editorial;
-use Ec\Encode\Encode;
 use Ec\Multimedia\Domain\Model\Multimedia;
 use Ec\Multimedia\Domain\Model\Photo\Photo;
 use Ec\Section\Domain\Model\Section;
@@ -21,7 +19,7 @@ use Ec\Section\Domain\Model\Section;
 class RecommendedEditorialsDataTransformer
 {
     use UrlGeneratorTrait;
-    use MultimediaTrait;
+
     /** @var string */
     private const TYPE = 'recommendededitorial';
 
@@ -32,10 +30,9 @@ class RecommendedEditorialsDataTransformer
 
     public function __construct(
         string $extension,
-        Thumbor $thumbor,
+        private readonly MultimediaShotService $multimediaShotService,
     ) {
         $this->setExtension($extension);
-        $this->setThumbor($thumbor);
     }
 
     /**
@@ -93,31 +90,11 @@ class RecommendedEditorialsDataTransformer
         return $recommended;
     }
 
-    private function editorialUrl(Editorial $editorial, Section $section): string
-    {
-        $editorialPath = \sprintf(
-            '%s/%s/%s_%s',
-            $section->getPath(),
-            $editorial->publicationDate()->format('Y-m-d'),
-            Encode::encodeUrl($editorial->editorialTitles()->urlTitle()),
-            $editorial->id()->id()
-        );
-
-        return $this->generateUrl(
-            'https://%s.%s.%s/%s',
-            $section->isSubdomainBlog() ? 'blog' : 'www',
-            $section->siteId(),
-            $editorialPath
-        );
-    }
-
     /**
      * @return array<string, string>
      */
     private function getMultimedia(string $editorialId): array
     {
-        $shots = [];
-
         /** @var array<string, mixed> $recommendedEditorials */
         $recommendedEditorials = $this->resolveData['recommendedEditorials'];
         /** @var array<string, string> $currentRecommendedEditorial */
@@ -127,21 +104,17 @@ class RecommendedEditorialsDataTransformer
         /** @var ?Multimedia $multimedia */
         $multimedia = $multimediaData[$currentRecommendedEditorial['multimediaId']] ?? null;
         if (null === $multimedia) {
-            return $shots;
+            return [];
         }
 
-        return $this->getShotsLandscape($multimedia);
+        return $this->multimediaShotService->generateLandscapeShots($multimedia);
     }
 
     /**
-     * @param string $editorialId
-     *
      * @return array<string, string>
      */
     private function getMultimediaOpening(string $editorialId): array
     {
-        $shots = [];
-
         /**
          * @var array{
          *          recommendedEditorials: array<string, array{
@@ -162,9 +135,9 @@ class RecommendedEditorialsDataTransformer
          */
         $multimedia = $resolveData['multimediaOpening'][$resolveData['recommendedEditorials'][$editorialId]['multimediaId']] ?? null;
         if (null === $multimedia) {
-            return $shots;
+            return [];
         }
 
-        return $this->getShotsLandscapeFromMedia($multimedia);
+        return $this->multimediaShotService->generateLandscapeShotsFromMedia($multimedia);
     }
 }

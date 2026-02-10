@@ -7,8 +7,11 @@
 namespace App\Application\DataTransformer\Apps;
 
 use App\Infrastructure\Service\Thumbor;
-use App\Infrastructure\Trait\MultimediaTrait;
 use Ec\Editorial\Domain\Model\Multimedia\Multimedia as MultimediaEditorial;
+use Ec\Editorial\Domain\Model\Multimedia\MultimediaId;
+use Ec\Editorial\Domain\Model\Multimedia\PhotoExist;
+use Ec\Editorial\Domain\Model\Multimedia\Video;
+use Ec\Editorial\Domain\Model\Multimedia\Widget;
 use Ec\Multimedia\Domain\Model\ClippingTypes;
 use Ec\Multimedia\Domain\Model\Multimedia;
 
@@ -17,8 +20,6 @@ use Ec\Multimedia\Domain\Model\Multimedia;
  */
 class DetailsMultimediaDataTransformer implements MultimediaDataTransformer
 {
-    use MultimediaTrait;
-
     /** @var string */
     private const WIDTH = 'width';
 
@@ -225,5 +226,21 @@ class DetailsMultimediaDataTransformer implements MultimediaDataTransformer
             'shots' => (object) $allShots,
             'photo' => current($allShots[self::ASPECT_RATIO_16_9]),
         ];
+    }
+
+    private function getMultimediaId(MultimediaEditorial $multimedia): ?MultimediaId
+    {
+        if ($multimedia instanceof PhotoExist) {
+            return $multimedia->id();
+        }
+
+        if (
+            ($multimedia instanceof Video || $multimedia instanceof Widget)
+            && ($multimedia->photo() instanceof PhotoExist)
+        ) {
+            return $multimedia->photo()->id();
+        }
+
+        return null;
     }
 }
