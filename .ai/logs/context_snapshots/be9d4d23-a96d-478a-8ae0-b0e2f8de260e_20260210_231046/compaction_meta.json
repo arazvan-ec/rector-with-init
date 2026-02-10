@@ -1,0 +1,10 @@
+{
+    "timestamp": "2026-02-10T23:10:46+00:00",
+    "session_id": "be9d4d23-a96d-478a-8ae0-b0e2f8de260e",
+    "message_count": 0,
+    "token_count": 0,
+    "current_role": "Planner",
+    "current_status": "PLANNING_COMPLETE",
+    "current_checkpoint": "none",
+    "type": "pre_compact_snapshot"
+}
