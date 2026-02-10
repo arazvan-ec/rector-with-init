@@ -138,9 +138,6 @@ Reduccion: ~90% en tiempo de I/O
 - MSI >= 79% en mutation testing
 - PSR-12 + Symfony coding standards
 
-## Relacion con Arquitectura Existente
+## Nota sobre Arquitectura
 
-Esta spec complementa la feature `snaapi-scalable-architecture` (Pipeline + DTO Factory):
-- Los **Gateways** definidos en esa arquitectura (`EditorialGatewayInterface`, `TagGatewayInterface`, etc.) son el punto de integracion
-- El `RequestCollector` puede actuar como un **Enricher** dentro del `EnrichmentPipeline`
-- Los **DTO Factories** consumen los datos resueltos del collector
+La feature `snaapi-scalable-architecture` (Pipeline + DTO Factory) en `.ai/project/features/` fue un experimento previo. **NO debe asumirse como solucion adoptada**. La arquitectura final de esta spec debe diseñarse desde cero, evaluando criticamente cualquier patron antes de aplicarlo. El punto de partida real es el codigo actual del `EditorialOrchestrator` y los patrones ya existentes en produccion (Chain of Responsibility, Strategy, Compiler Passes).
