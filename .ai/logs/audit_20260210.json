@@ -406,3 +406,83 @@
     "description": "Check current git status"
   }
 }
+{
+  "timestamp": "2026-02-10T20:14:29+00:00",
+  "session_id": "0ff95059-8169-4f36-ba44-e0c9c55da033",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git add .ai/logs/audit_20260210.json .ai/logs/session_20260210.log .ai/snapshots/auto_FEATURE_X_20260210_200859/ .ai/snapshots/auto_FEATURE_X_20260210_201407/ && git commit -m \"$(cat <<'EOF'\nUpdate AI workflow logs and snapshots\n\nhttps://claude.ai/code/session_01L9n4rM5s2ywUGPYBnGoEAj\nEOF\n)\" && git push -u origin claude/refactor-editorial-async-UrZ1X",
+    "description": "Stage, commit and push workflow files"
+  }
+}
+{
+  "timestamp": "2026-02-10T20:15:06+00:00",
+  "session_id": "0ff95059-8169-4f36-ba44-e0c9c55da033",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "ls .ai/project/",
+    "description": "Check existing project directory structure"
+  }
+}
+{
+  "timestamp": "2026-02-10T20:15:13+00:00",
+  "session_id": "0ff95059-8169-4f36-ba44-e0c9c55da033",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "ls .ai/project/features/",
+    "description": "Check features directory"
+  }
+}
+{
+  "timestamp": "2026-02-10T20:15:20+00:00",
+  "session_id": "0ff95059-8169-4f36-ba44-e0c9c55da033",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "ls .ai/project/features/snaapi-scalable-architecture/",
+    "description": "Check existing architecture feature"
+  }
+}
+{
+  "timestamp": "2026-02-10T20:15:32+00:00",
+  "session_id": "0ff95059-8169-4f36-ba44-e0c9c55da033",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "mkdir -p .ai/project/features/editorial-async-batch-collector",
+    "description": "Create feature directory"
+  }
+}
+{
+  "timestamp": "2026-02-10T20:16:22+00:00",
+  "session_id": "0ff95059-8169-4f36-ba44-e0c9c55da033",
+  "tool_name": "Write",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/SPEC-async-batch-collector.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/SPEC-async-batch-collector.md",
+    "content": "# SPEC: Batch Async Request Collector por Dominio Editorial\n\n## Problema\n\nEl `EditorialOrchestrator` (`src/Orchestrator/Chain/EditorialOrchestrator.php`) realiza ~42 llamadas HTTP secuenciales bloqueantes para resolver un editorial completo (principal + insertadas + recomendadas). Esto genera ~4.2s de latencia solo en I/O.\n\n### Llamadas HTTP actuales (secuenciales)\n\n| Bounded Context | Llamada | Ubicacion | Repeticiones | Tipo |\n|-----------------|---------|-----------|-------------|------|\n| Editorial | `findEditorialById` (principal) | L104 | 1 | SYNC |\n| Section | `findSectionById` (principal) | L115 | 1 | SYNC |\n| Membership | `getMembershipUrl` | L387 | 1 | ASYNC (ya existe) |\n| Editorial | `findEditorialById` (insertadas) | L131 | N | SYNC loop |\n| Section | `findSectionById` (insertadas) | L134 | N | SYNC loop |\n| Journalist | `findJournalistByAliasId` (insertadas) | L139->288 | N x S | SYNC nested loop |\n| Multimedia | `findMultimediaById` (insertadas) | L147->431 | N | ASYNC (ya existe) |\n| Editorial | `findEditorialById` (recomendadas) | L172 | R | SYNC loop |\n| Section | `findSectionById` (recomendadas) | L175 | R | SYNC loop |\n| Journalist | `findJournalistByAliasId` (recomendadas) | L180->288 | R x S | SYNC nested loop |\n| Multimedia | `findMultimediaById` (recomendadas) | L188->431 | R | ASYNC (ya existe) |\n| Multimedia | `findMultimediaOpeningById` | L449 | 1 | SYNC |\n| Multimedia | `findMultimediaById` (principal) | L212->431 | 1 | ASYNC (ya existe) |\n| Multimedia | `findPhotoById` (body tags) | L333 | P | SYNC loop |\n| Tag | `findTagById` | L226 | T | SYNC loop |\n| Legacy | `findCommentsByEditorialId` | L239 | 1 | SYNC |\n| Journalist | `findJournalistByAliasId` (principal) | L243->288 | S | SYNC loop |\n\n**Variables**: N=insertadas, R=recomendadas, S=firmas por editorial, T=tags, P=fotos en body\n\n### Datos que NO se recuperan actualmente\n\n- Tags de noticias insertadas (L124-161): no se incluyen en `$resolveData['insertedNews']`\n- Tags de editoriales recomendados (L163-207): no se incluyen en `$resolveData['recommendedEditorials']`\n\n## Solucion Propuesta\n\n### Patron: Request Collector / Batch Aggregator por Dominio\n\nCrear una arquitectura que permita **agrupar todas las peticiones HTTP de todo el dominio editorial** y ejecutarlas en paralelo usando el patron de promises existente (`GuzzleHttp\\Promise\\Utils::settle()`).\n\n### Fases de Ejecucion\n\nDebido a dependencias entre datos, se requieren **3 fases secuenciales mínimas**:\n\n#### Fase A: Fetch editorial principal (SYNC obligatorio)\n```\nEditorial principal → extraer IDs de insertadas/recomendadas + tags + signatures + multimedia\n```\n\n#### Fase B: Fetch editoriales hijas (ASYNC paralelo)\n```\nLanzar en paralelo:\n  - findEditorialById para cada insertada\n  - findEditorialById para cada recomendada\nResolver → extraer SUS IDs de tags, signatures, multimedia, sections\n```\n\n#### Fase C: Fetch todas las dependencias (ASYNC paralelo, batch unico)\n```\nRecopilar y deduplicar TODOS los IDs por dominio:\n  TagIds:        [tag1, tag2, tag3, tag5, tag8]        → deduplicados\n  JournalistIds: [alias1, alias2, alias3]               → deduplicados\n  SectionIds:    [sec1, sec2, sec3]                      → deduplicados\n  MultimediaIds: [mm1, mm2, mm3, mm4]                   → deduplicados\n  PhotoIds:      [photo1, photo2, photo3]                → deduplicados\n\nLanzar TODAS las promises en paralelo → Utils::settle() → distribuir resultados\n```\n\n### Mejora Esperada\n\n```\nANTES:  ~42 HTTP calls secuenciales = ~4.2s\nDESPUES: 3 fases (1 sync + 2 parallel settle) = ~300-400ms\nReduccion: ~90% en tiempo de I/O\n```\n\n## Specs Funcionales\n\n### SP-01: Request Collector inyectable y reutilizable\n- Crear un servicio `RequestCollector` que acumule IDs por bounded context\n- Debe ser reutilizable por otros orquestadores (no solo editorial)\n- Metodos: `addTagId()`, `addJournalistId()`, `addSectionId()`, `addMultimediaId()`, `addPhotoId()`\n- Metodo `collectAll(): ResolvedData` que lanza todas las promises y devuelve resultados indexados por ID\n\n### SP-02: Deduplicacion de IDs\n- Un mismo tag/journalist/section puede aparecer en editorial principal + insertadas + recomendadas\n- El collector debe deduplicar IDs antes de lanzar peticiones\n- Evita HTTP calls redundantes\n\n### SP-03: Tags para noticias insertadas\n- Recuperar tags de cada noticia insertada\n- Incluirlos en `$resolveData['insertedNews'][$id]['tags']`\n- Transformar via el `DetailsAppsDataTransformer` existente\n\n### SP-04: Tags para editoriales recomendados\n- Recuperar tags de cada editorial recomendado\n- Incluirlos en `$resolveData['recommendedEditorials'][$id]['tags']`\n\n### SP-05: Journalists en batch async\n- Actualmente `retrieveAliasFormat()` (L281-296) hace HTTP sync por cada firma\n- Se llama en 3 lugares: insertadas (L139), recomendadas (L180), principal (L243)\n- Mover a batch async: recopilar todos los aliasIds, lanzar en paralelo\n\n### SP-06: Sections en batch async\n- `findSectionById` se llama sync para insertadas (L134) y recomendadas (L175)\n- Mover a batch async en Fase C\n\n### SP-07: Photos de body tags en batch async\n- `retrievePhotosFromBodyTags()` (L306-323) hace HTTP sync por cada foto\n- `addPhotoToArray()` (L330-340) llama `findPhotoById` secuencialmente\n- Mover a batch async en Fase C\n\n### SP-08: Clients deben soportar flag async\n- Verificar que `QueryTagClient`, `QueryJournalistClient`, `QuerySectionClient` soporten `$async` flag\n- Si no lo soportan, extender o decorar para devolver Promise\n\n### SP-09: Arquitectura multi-formato (Apps/Web)\n- El mismo orquestador debe poder alimentar diferentes formatos de respuesta\n- Actualmente solo existe `src/Application/DataTransformer/Apps/`\n- Disenar una capa de transformacion que soporte `Apps/` y `Web/` (y futuros)\n- El `RequestCollector` y la fase de fetching es comun; solo cambia la transformacion\n\n### SP-10: Tolerancia a fallos\n- Mantener el patron actual de `try/catch` + `continue` por elemento\n- `Utils::settle()` ya maneja promises rejected individualmente\n- Un tag que falle no debe romper toda la editorial\n\n## Restricciones Tecnicas\n\n- PHP 8.2+ con strict types\n- Symfony 6.4\n- HTTPLug con Guzzle7 async client (ya configurado en `config/packages/httplug.yaml`)\n- `GuzzleHttp\\Promise\\Utils::settle()` como mecanismo de resolucion\n- Mantener compatibilidad con API v1 actual\n- PHPStan level 9\n- MSI >= 79% en mutation testing\n- PSR-12 + Symfony coding standards\n\n## Relacion con Arquitectura Existente\n\nEsta spec complementa la feature `snaapi-scalable-architecture` (Pipeline + DTO Factory):\n- Los **Gateways** definidos en esa arquitectura (`EditorialGatewayInterface`, `TagGatewayInterface`, etc.) son el punto de integracion\n- El `RequestCollector` puede actuar como un **Enricher** dentro del `EnrichmentPipeline`\n- Los **DTO Factories** consumen los datos resueltos del collector\n"
+  }
+}
+{
+  "timestamp": "2026-02-10T20:16:35+00:00",
+  "session_id": "0ff95059-8169-4f36-ba44-e0c9c55da033",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git add .ai/project/features/editorial-async-batch-collector/SPEC-async-batch-collector.md && git commit -m \"$(cat <<'EOF'\nAdd spec for batch async request collector per editorial domain\n\nDefines architecture for grouping all HTTP requests across the editorial\ndomain (tags, journalists, sections, multimedia, photos) and executing\nthem in parallel using promise-based concurrency.\n\nhttps://claude.ai/code/session_01L9n4rM5s2ywUGPYBnGoEAj\nEOF\n)\" && git push -u origin claude/refactor-editorial-async-UrZ1X",
+    "description": "Commit and push the spec file"
+  }
+}
+{
+  "timestamp": "2026-02-10T20:16:49+00:00",
+  "session_id": "0ff95059-8169-4f36-ba44-e0c9c55da033",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git status",
+    "description": "Check current git status"
+  }
+}
