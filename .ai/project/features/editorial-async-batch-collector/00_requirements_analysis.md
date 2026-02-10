@@ -3,6 +3,7 @@
 > **Feature ID**: editorial-async-batch-collector
 > **Document**: 00_requirements_analysis.md
 > **Created**: 2026-02-10
+> **Updated**: 2026-02-10
 
 ---
 
@@ -31,7 +32,7 @@ FASE 2 - Hijos (SYNC bloqueante en loops)
 │   ├── findSectionById (L175)                  4 calls
 │   ├── findJournalistByAliasId (L180)          8 calls (R x S)
 │   └── findMultimediaById (L188)               4 promises (ya async)
-└── Tags NO recuperados en insertadas/recomendadas
+└── Tags NO recuperados en insertadas/recomendadas (decision de producto)
 
 FASE 3 - Dependencias transversales (SYNC bloqueante en loops)
 ├── findMultimediaOpeningById (L449)            1 call
@@ -85,40 +86,75 @@ $resolveData['multimedia'] = Utils::settle($resolveData['multimedia'])
 - `self::UNWRAPPED = true`
 - `Promise::FULFILLED` para verificar estado en callbacks
 
-### 1.4 Datos Faltantes
+### 1.4 Analisis isVisible() — Impacto en Agrupacion Async
 
-Actualmente NO se recuperan:
-1. **Tags de noticias insertadas** (L124-161) - El loop de insertadas no llama a `findTagById`
-2. **Tags de editoriales recomendados** (L163-207) - El loop de recomendadas no llama a `findTagById`
+Actualmente `isVisible()` se verifica ANTES de acumular dependencias de cada editorial hijo:
+
+**Insertadas (L132)**:
+```php
+if ($insertedEditorials->isVisible()) {
+    $sectionInserted = $this->querySectionClient->findSectionById(...);  // SKIP if not visible
+    foreach ($signatures as $signature) {
+        $result = $this->retrieveAliasFormat(...);  // SKIP if not visible
+    }
+    $multimedia = $this->getAsyncMultimedia(...);    // SKIP if not visible
+}
+```
+
+**Impacto por editorial NO visible**: ~5 HTTP calls evitados (1 section + ~3 journalists + 1 multimedia).
+**Decision**: Usar 2 rondas async para insertadas/recomendadas:
+- Ronda 1: resolve editorials en batch
+- Post-settle: filtrar isVisible()
+- Ronda 2: lanzar dependencias SOLO de visibles
+
+### 1.5 Analisis retrieveAliasFormat() — Journalist Dedup
+
+**Hallazgo critico**: Un mismo periodista (aliasId) puede aparecer con DIFERENTES combinaciones de `(section, hasTwitter)`:
+- Principal: `retrieveAliasFormat('J1', $sectionPrincipal, hasTwitter=true)` (si editorial es Blog)
+- Insertada: `retrieveAliasFormat('J1', $sectionInsertada, hasTwitter=false)` (siempre false)
+- Recomendada: `retrieveAliasFormat('J1', $sectionRecomendada, hasTwitter=false)` (siempre false)
+
+**Sin embargo**: El HTTP call (`findJournalistByAliasId`) devuelve SIEMPRE los mismos datos para el mismo aliasId. La diferencia esta en la transformacion (`journalistsDataTransformer->write()`), que varia segun section y hasTwitter.
+
+**Decision**: Dedup el HTTP call por aliasId. Post-resolve, transformar N veces con los distintos contextos.
 
 ---
 
 ## 2. Requisitos Funcionales
 
-### RF-01: Acumulacion y Resolucion Async
-Acumular promises de cada bounded context usando directamente los clients con `$async = true`, y resolver en batch con `Utils::settle()`.
+### RF-01: AsyncBatchCollector
+Clase `AsyncBatchCollector` que abstrae la agrupacion de promises async en grupos nombrados. Soporta: add, settle, get, encadenamiento de grupos.
 
-### RF-02: Deduplicacion de IDs
-Un mismo tag/journalist/section puede aparecer en editorial principal + insertadas + recomendadas. El collector deduplica antes de lanzar peticiones HTTP.
+### RF-02: Acumulacion y Resolucion Async
+Acumular promises de cada bounded context usando los clients con `$async = true`, encapsulados en el collector. Resolver por grupo con `Utils::settle()`.
 
-### RF-03: Batch Async Execution
-Todas las llamadas HTTP independientes dentro de una fase se ejecutan en paralelo via `Utils::settle()`. Maximo 3 fases secuenciales.
+### RF-03: Deduplicacion de IDs
+Un mismo tag/section puede aparecer en editorial principal + insertadas + recomendadas. El collector deduplica antes de lanzar peticiones HTTP.
 
-### RF-04: Tags de Insertadas/Recomendadas
-Recuperar tags de cada noticia insertada y editorial recomendado. Incluirlos en la respuesta transformada.
+### RF-04: Journalist Dedup HTTP + Multi-Transform
+Deduplicar HTTP call por aliasId. Mantener mapa de contextos `aliasId → [{section, hasTwitter, targetEditorial}]`. Post-resolve, transformar N veces.
 
-### RF-05: Tolerancia a Fallos
+### RF-05: Comments Async
+`findCommentsByEditorialId` (L239) mover de sync a async via collector.
+
+### RF-06: Opening Multimedia Async
+`findMultimediaOpeningById` (L449) mover de sync a async via collector.
+
+### RF-07: isVisible() con 2 Rondas
+Insertadas y recomendadas usan 2 rondas: resolve editorials → filter visible → launch dependencies. Evita ~5 HTTP calls por editorial oculto.
+
+### RF-08: Tolerancia a Fallos
 Un fallo en un elemento individual (tag, journalist, photo) no rompe la respuesta completa. Mantener patron `try/catch + continue` o equivalente con `Promise::FULFILLED` check.
 
-### RF-06: Backward Compatibility
-La respuesta API v1 mantiene la misma estructura JSON. Los datos nuevos (tags de insertadas/recomendadas) se anaden sin romper contratos existentes.
+### RF-09: Backward Compatibility
+La respuesta API v1 mantiene la misma estructura JSON. Sin breaking changes.
 
 ---
 
 ## 3. Requisitos No Funcionales
 
 ### RNF-01: Rendimiento
-- Reducir de ~42 calls sync (~4.2s) a 3 fases con settle (~300-400ms)
+- Reducir de ~42 calls sync (~4.2s) a fases con settle async (~300-400ms)
 - No introducir overhead significativo en la capa de acumulacion
 
 ### RNF-02: Quality Gates
@@ -128,35 +164,50 @@ La respuesta API v1 mantiene la misma estructura JSON. Los datos nuevos (tags de
 - PSR-12 + Symfony coding standards
 
 ### RNF-03: Principios SOLID
-- **S**: El orchestrator orquesta, los clients resuelven HTTP
-- **O**: Extensible para nuevos bounded contexts
+- **S**: AsyncBatchCollector solo agrupa/resuelve, orchestrator solo orquesta, clients solo HTTP
+- **O**: Extensible para nuevos bounded contexts via collector
 - **I**: Interfaces pequeñas y focalizadas
 - **D**: Depender de abstracciones (interfaces de clients, no implementaciones)
 
 ---
 
-## 4. Patron Async Uniforme
+## 4. Patron Async: AsyncBatchCollector
 
 ### Premisa
-Todos los clients `ec/*` soportan (o soportaran) el patron `$async` boolean flag. Esto significa que podemos usar directamente:
+Los clients `ec/*` soportan `$async` boolean flag. El AsyncBatchCollector envuelve este patron en una API de agrupacion configurable.
 
+### API
 ```php
-$promise = $this->queryTagClient->findTagById($id, self::ASYNC);       // Promise
-$promise = $this->queryJournalistClient->findJournalistByAliasId($aliasId, self::ASYNC); // Promise
-$promise = $this->querySectionClient->findSectionById($id, self::ASYNC); // Promise
+// Registrar callables en grupos
+$collector->add('principal_deps', 'comments', fn() => $this->queryLegacyClient->findCommentsByEditorialId($id, self::ASYNC));
+$collector->add('principal_deps', 'opening', fn() => $this->queryMultimediaClient->findMultimediaOpeningById($id, self::ASYNC));
+$collector->add('principal_deps', 'tag_5', fn() => $this->queryTagClient->findTagById(5, self::ASYNC));
+
+// Resolver grupo
+$collector->settle('principal_deps');
+
+// Obtener resultados
+$comments = $collector->get('principal_deps', 'comments');
+$opening = $collector->get('principal_deps', 'opening');
 ```
 
-Y resolver con el patron ya existente:
+### Encadenamiento para insertadas/recomendadas
 ```php
-$results = Utils::settle($promises)->wait(self::UNWRAPPED);
+// Ronda 1: editorials
+$collector->add('editorials', 'ins_42', fn() => $this->queryEditorialClient->findEditorialById(42, self::ASYNC));
+$collector->settle('editorials');
+
+// Filtrar visibles
+$editorial = $collector->get('editorials', 'ins_42');
+if ($editorial->isVisible()) {
+    // Ronda 2: dependencias solo de visibles
+    $collector->add('deps', 'section_42', fn() => $this->querySectionClient->findSectionById($editorial->sectionId(), self::ASYNC));
+}
+$collector->settle('deps');
 ```
 
 ### Implicacion
-No se necesitan decorators, wrappers, ni un BatchRequestCollector intermedio. El refactor se simplifica a:
-1. Cambiar llamadas sync por `$client->method($id, self::ASYNC)` para obtener Promise
-2. Acumular promises en arrays por contexto
-3. Resolver con `Utils::settle()` + callback que filtra `Promise::FULFILLED`
-4. Deduplicar IDs antes de lanzar promises (optimizacion)
+El collector NO reemplaza los clients — los envuelve. Los clients siguen inalterados. El collector es una nueva clase en Infrastructure que proporciona la abstraccion de agrupacion.
 
 ---
 
@@ -174,6 +225,10 @@ No se necesitan decorators, wrappers, ni un BatchRequestCollector intermedio. El
 - `config/packages/httplug.yaml` - Config HTTP clients
 - `config/packages/*/infrastructure.yaml` - Config inyeccion de clients
 - `tests/Orchestrator/Chain/EditorialOrchestratorTest.php` - Tests existentes
+
+### Archivos a Crear
+- `src/Infrastructure/Async/AsyncBatchCollector.php` - Nueva clase
+- `tests/Infrastructure/Async/AsyncBatchCollectorTest.php` - Tests unitarios
 
 ---
 

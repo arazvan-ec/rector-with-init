@@ -4,13 +4,14 @@
 > **Priority**: HIGH
 > **Status**: PLANNING
 > **Created**: 2026-02-10
+> **Updated**: 2026-02-10
 > **Workflow**: task-breakdown
 
 ---
 
 ## Objective
 
-Refactorizar el sistema de orquestacion editorial para agrupar todas las peticiones HTTP del dominio en batches async paralelos, eliminando las ~42 llamadas secuenciales bloqueantes actuales. Disenar una arquitectura multi-formato que soporte diferentes respuestas (Apps, Web) sobre la misma capa de fetching.
+Refactorizar el sistema de orquestacion editorial para agrupar todas las peticiones HTTP del dominio en batches async paralelos, eliminando las ~42 llamadas secuenciales bloqueantes actuales. Introducir un `AsyncBatchCollector` como abstraccion de agrupacion configurable que permita encadenar fases de resolucion async.
 
 ---
 
@@ -43,10 +44,10 @@ El `EditorialOrchestrator` (`src/Orchestrator/Chain/EditorialOrchestrator.php`) 
 
 **Variables**: N=insertadas, R=recomendadas, S=firmas/editorial, T=tags, P=fotos en body
 
-### Datos que NO se recuperan
+### Datos que NO se recuperan (decision intencional de producto)
 
-- Tags de noticias insertadas (L124-161)
-- Tags de editoriales recomendados (L163-207)
+- Tags de noticias insertadas (L124-161) — **EXCLUIDO del scope, decision de producto**
+- Tags de editoriales recomendados (L163-207) — **EXCLUIDO del scope, decision de producto**
 
 ### Escenario tipico
 
@@ -58,24 +59,32 @@ Editorial con 3 insertadas, 4 recomendadas, 2 firmas cada una, 5 tags, 3 fotos b
 
 ## Acceptance Criteria
 
-### Fase A: Batch Editorials
-- [ ] Editorials insertadas se resuelven via `Utils::settle()` batch async
-- [ ] Editorials recomendadas se resuelven via `Utils::settle()` batch async
-- [ ] `isVisible()` se verifica post-settle
+### Infraestructura: AsyncBatchCollector
+- [ ] Clase `AsyncBatchCollector` con API: `add(group, key, callable)`, `settle(group)`, `get(group, key)`
+- [ ] Soporte para grupos nombrados independientes
+- [ ] Encadenamiento: settle grupo A → poblar grupo B → settle grupo B
+- [ ] Unit tests de la clase aislada
 
-### Fase B: Batch Dependencias
-- [ ] Todas las llamadas HTTP independientes se ejecutan en paralelo via `Utils::settle()`
-- [ ] Maximo 3 fases secuenciales (editorial principal -> hijos -> dependencias)
-- [ ] Tags de insertadas y recomendadas se recuperan
-- [ ] Journalists se recuperan en batch async
-- [ ] Sections se recuperan en batch async
-- [ ] Photos de body tags se recuperan en batch async
-- [ ] Tolerancia a fallos por elemento (un tag fallido no rompe la editorial)
+### Fase A: Editorial Principal Async
+- [ ] Comments (`findCommentsByEditorialId`) via async en el collector
+- [ ] Opening multimedia (`findMultimediaOpeningById`) via async en el collector
+- [ ] Journalists del principal en batch async con dedup por aliasId
+- [ ] Tags del principal en batch async
+- [ ] Photos body tags en batch async
+- [ ] Todas las dependencias del principal resueltas en 1 settle
 
-### Fase C: Multi-formato
-- [ ] Un mismo orquestador alimenta diferentes formatos de respuesta
-- [ ] Namespace `Apps/` existente sigue funcionando sin cambios
-- [ ] Diseño extensible para futuros formatos (Web, AMP, etc.)
+### Fase B: Insertadas Async (2 rondas)
+- [ ] Ronda 1: Editorial fetches de insertadas via collector (batch async)
+- [ ] Post-settle: filtrar `isVisible()` — solo visibles generan dependencias
+- [ ] Ronda 2: Sections, journalists, multimedia de insertadas visibles via collector
+- [ ] Journalist dedup: mismo aliasId = 1 HTTP call, N transformaciones con distintos contextos
+- [ ] Tolerancia a fallos por elemento
+
+### Fase C: Recomendadas Async (2 rondas)
+- [ ] Mismo patron que Fase B para recomendadas
+- [ ] Ronda 1: Editorial fetches de recomendadas via collector
+- [ ] Post-settle: filtrar `isVisible()`
+- [ ] Ronda 2: Sections, journalists, multimedia de recomendadas visibles
 
 ### Quality Gates
 - [ ] PHPStan level 9: 0 errores
@@ -86,37 +95,68 @@ Editorial con 3 insertadas, 4 recomendadas, 2 firmas cada una, 5 tags, 3 fotos b
 
 ---
 
+## Delivery Model: 3 PRs Incrementales
+
+### PR1: AsyncBatchCollector + Editorial Principal Async
+- Clase `AsyncBatchCollector` (Infrastructure)
+- Refactor editorial principal: comments, opening, journalists, tags, photos body — todo async en 1 grupo
+- Tests unitarios del collector + tests del orchestrator adaptados
+
+### PR2: Insertadas Async
+- Refactor loop insertadas: 2 rondas (editorial resolve → filter visible → dependencies)
+- Journalist dedup con multi-transform
+- Tests
+
+### PR3: Recomendadas Async
+- Mismo patron que PR2 para recomendadas
+- Tests
+- Full quality suite (`make tests`)
+
+---
+
 ## Specs Funcionales
 
-### SP-01: Async directo con `$async` flag
-Todos los clients soportan `$client->findXById($id, self::ASYNC)` devolviendo Promise. Se acumulan promises y se resuelven con `Utils::settle()`.
+### SP-01: AsyncBatchCollector
+Clase en `src/Infrastructure/Async/AsyncBatchCollector.php` que abstrae la agrupacion de promises async. API:
+- `add(string $group, string $key, callable $callable): void` — registra un callable en un grupo
+- `settle(string $group): void` — ejecuta todos los callables del grupo, resuelve con `Utils::settle()`
+- `get(string $group, string $key): mixed` — obtiene resultado resuelto
+- `getGroup(string $group): array` — obtiene todos los resultados del grupo
+- `has(string $group, string $key): bool` — verifica si existe un resultado fulfilled
+Internamente usa `Utils::settle()` de GuzzleHttp con el patron `$async` de los clients existentes.
 
-### SP-02: Deduplicacion de IDs
-Un mismo tag/journalist/section puede aparecer en editorial principal + insertadas + recomendadas. Indexar promises por ID (`$promises[$id] ??= ...`) deduplica naturalmente.
+### SP-02: Async directo con `$async` flag
+Todos los clients soportan `$client->findXById($id, self::ASYNC)` devolviendo Promise. El collector encapsula este patron.
 
-### SP-03: Tags para noticias insertadas
-Recuperar tags de cada noticia insertada e incluirlos en la respuesta transformada.
+### SP-03: Deduplicacion de IDs
+Un mismo tag/section puede aparecer en editorial principal + insertadas + recomendadas. Indexar por ID (`$promises[$id] ??= ...`) deduplica naturalmente.
 
-### SP-04: Tags para editoriales recomendados
-Recuperar tags de cada editorial recomendado e incluirlos en la respuesta.
+### SP-04: Journalist Dedup HTTP + Multi-Transform
+`findJournalistByAliasId` se deduplica por aliasId (1 HTTP call por periodista unico). Post-resolve, se transforma N veces con distintas combinaciones de `(section, hasTwitter)`. Requiere un mapa de contextos `aliasId → [{section, hasTwitter, targetEditorial}]`.
 
 ### SP-05: Journalists en batch async
-`retrieveAliasFormat()` (L281-296) actualmente hace HTTP sync por cada firma en 3 lugares (insertadas L139, recomendadas L180, principal L243). Mover a batch async.
+`retrieveAliasFormat()` (L281-296) se descompone en: acumular promise, resolver batch, transformar post-resolve. El metodo original se refactoriza o elimina.
 
 ### SP-06: Sections en batch async
-`findSectionById` se llama sync para insertadas (L134) y recomendadas (L175). Mover a batch async.
+`findSectionById` se llama sync para insertadas (L134) y recomendadas (L175). Mover a batch async via collector. Section del principal sigue sync (necesaria para membership).
 
 ### SP-07: Photos de body tags en batch async
-`retrievePhotosFromBodyTags()` (L306-323) hace HTTP sync por cada foto. Mover a batch async.
+`retrievePhotosFromBodyTags()` (L306-323) hace HTTP sync por cada foto. Mover a batch async via collector.
 
-### SP-08: Soporte async en clients externos
+### SP-08: Comments en batch async
+`findCommentsByEditorialId` (L239) actualmente sync. Mover a async via collector.
+
+### SP-09: Opening multimedia en batch async
+`findMultimediaOpeningById` (L449) actualmente sync. Mover a async via collector.
+
+### SP-10: Soporte async en clients externos
 Todos los clients `ec/*` soportan (o soportaran) el flag `$async`. No se necesitan decorators ni wrappers.
 
-### SP-09: Arquitectura multi-formato
-Separar la capa de fetching (comun) de la capa de transformacion (formato-especifica). Actualmente solo existe `src/Application/DataTransformer/Apps/`. Diseñar extension para soportar `Web/` y futuros formatos.
+### SP-11: isVisible() con 2 rondas async
+Para insertadas y recomendadas: Ronda 1 resuelve editorials → filtra isVisible() → Ronda 2 solo lanza dependencias de visibles. Evita HTTP calls innecesarios para editorials ocultos (~5 calls por editorial no visible).
 
-### SP-10: Tolerancia a fallos
-Mantener patron actual de `try/catch` + `continue`. `Utils::settle()` maneja promises rejected individualmente.
+### SP-12: Tolerancia a fallos
+Mantener patron actual de `try/catch` + `continue`. `Utils::settle()` maneja promises rejected individualmente. Un fallo en un elemento no rompe la respuesta completa.
 
 ---
 
@@ -143,7 +183,7 @@ Las features documentadas en `.ai/project/features/` pueden servir como referenc
 
 ```
 ANTES:  ~42 HTTP calls secuenciales = ~4.2s I/O
-DESPUES: 3 fases (1 sync + 2 parallel settle) = ~300-400ms
+DESPUES: Fases con settle async agrupado = ~300-400ms
 Reduccion: ~90% en tiempo de I/O
 ```
 

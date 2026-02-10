@@ -16,136 +16,253 @@ $promise = $client->findXById($id, self::ASYNC);  // devuelve Promise
 $result  = $client->findXById($id);                // devuelve objeto (sync, default)
 ```
 
-Esto elimina la necesidad de decorators, wrappers, o un BatchRequestCollector intermedio. El refactor se hace directamente en el `EditorialOrchestrator` usando los clients existentes.
+Se introduce un `AsyncBatchCollector` como abstraccion de agrupacion que envuelve este patron en una API configurable con grupos nombrados y encadenamiento.
 
 ---
 
-## 2. Patron de Resolucion
+## 2. AsyncBatchCollector
 
-### 2.1 Patron ya existente (multimedia)
+### 2.1 Ubicacion
 
-```php
-// Acumular promises
-$resolveData['multimedia'][] = $this->queryMultimediaClient->findMultimediaById($id, self::ASYNC);
-
-// Resolver batch
-$resolveData['multimedia'] = Utils::settle($resolveData['multimedia'])
-    ->then($this->createCallback([$this, 'fulfilledMultimedia']))
-    ->wait(self::UNWRAPPED);
+```
+src/Infrastructure/Async/AsyncBatchCollector.php
+tests/Infrastructure/Async/AsyncBatchCollectorTest.php
 ```
 
-### 2.2 Patron a replicar (tags, journalists, sections, photos)
+### 2.2 API
 
 ```php
-// Acumular promises (con dedup por ID)
-$tagPromises = [];
-foreach ($allTagIds as $tagId) {
-    if (!isset($tagPromises[$tagId])) {
-        $tagPromises[$tagId] = $this->queryTagClient->findTagById($tagId, self::ASYNC);
-    }
-}
+declare(strict_types=1);
 
-// Resolver batch
-$resolvedTags = Utils::settle($tagPromises)
-    ->then($this->createCallback([$this, 'fulfilledTags']))
-    ->wait(self::UNWRAPPED);
-```
+namespace App\Infrastructure\Async;
 
-**Clave**: Indexar promises por ID para deduplicar naturalmente (mismo ID = misma key = sin duplicado).
-
-### 2.3 Callbacks de resolucion
-
-Cada bounded context tendra su callback `fulfilled*()` siguiendo el patron de `fulfilledMultimedia()`:
-
-```php
-protected function fulfilledTags(array $promises): array
+class AsyncBatchCollector
 {
-    $result = [];
-    foreach ($promises as $id => $promise) {
-        if (Promise::FULFILLED === $promise['state']) {
-            $result[$id] = $promise['value'];
-        }
-    }
-    return $result;
+    /** @var array<string, array<string, callable>> Callables por grupo */
+    private array $callables = [];
+
+    /** @var array<string, array<string, mixed>> Resultados resueltos por grupo */
+    private array $results = [];
+
+    /**
+     * Registra un callable que devuelve una Promise en un grupo nombrado.
+     * Si la key ya existe en el grupo, no se sobreescribe (dedup natural).
+     */
+    public function add(string $group, string $key, callable $callable): void;
+
+    /**
+     * Ejecuta todos los callables del grupo, obtiene promises,
+     * resuelve con Utils::settle(), y almacena resultados fulfilled.
+     */
+    public function settle(string $group): void;
+
+    /**
+     * Obtiene el resultado resuelto de una key en un grupo.
+     * Lanza excepcion si el grupo no ha sido settled o la key no existe/fallo.
+     */
+    public function get(string $group, string $key): mixed;
+
+    /**
+     * Obtiene todos los resultados fulfilled de un grupo.
+     * @return array<string, mixed>
+     */
+    public function getGroup(string $group): array;
+
+    /**
+     * Verifica si una key en un grupo fue resuelta exitosamente (fulfilled).
+     */
+    public function has(string $group, string $key): bool;
 }
 ```
 
-Los callbacks son identicos en estructura. Se puede evaluar extraer un metodo generico `fulfilledResults()` si la repeticion es excesiva, pero no es obligatorio.
+### 2.3 Implementacion interna (settle)
+
+```php
+public function settle(string $group): void
+{
+    $promises = [];
+    foreach ($this->callables[$group] ?? [] as $key => $callable) {
+        $promises[$key] = $callable(); // Cada callable devuelve Promise
+    }
+
+    $settled = Utils::settle($promises)->wait(true);
+
+    $this->results[$group] = [];
+    foreach ($settled as $key => $result) {
+        if (Promise::FULFILLED === $result['state']) {
+            $this->results[$group][$key] = $result['value'];
+        }
+        // Rejected promises se ignoran silenciosamente (tolerancia a fallos)
+    }
+
+    // Limpiar callables del grupo (ya resueltos)
+    unset($this->callables[$group]);
+}
+```
+
+### 2.4 Deduplicacion
+
+```php
+public function add(string $group, string $key, callable $callable): void
+{
+    // Si la key ya existe, no sobreescribir (dedup natural por ID)
+    $this->callables[$group][$key] ??= $callable;
+}
+```
+
+Esto garantiza: `$collector->add('tags', 'tag_5', ...)` llamado 3 veces = 1 sola promise.
+
+### 2.5 Ventajas
+
+| Aspecto | Sin collector | Con AsyncBatchCollector |
+|---------|---------------|------------------------|
+| Acumulacion | Arrays manuales dispersos | API unificada con grupos |
+| Dedup | `$arr[$key] ??= ...` manual | Builtin en `add()` |
+| Settle | `Utils::settle()` directo | Encapsulado en `settle()` |
+| Resultados | Arrays con `fulfilled`/`rejected` | Solo fulfilled, API limpia |
+| Encadenamiento | Manual con variables intermedias | `settle('A') → add('B') → settle('B')` |
+| Testing | Mock Utils::settle + promises | Mock collector directamente |
 
 ---
 
 ## 3. Flujo Refactorizado del execute()
 
-### 3 Fases Secuenciales
+### Diagrama por PR
 
 ```
-FASE 1 - Editorial Principal (inevitable sync)
-├── findEditorialById($id)                       [SYNC - necesita el objeto para todo]
-├── findSectionById($sectionId)                  [SYNC - necesita siteId para membership]
-└── getMembershipUrl()                            [ASYNC - ya existente, devuelve Promise]
+=== PR1: Editorial Principal ===
 
-FASE 2 - Acumulacion de Promises (loops que lanzan async)
-├── Loop insertadas:
-│   ├── findEditorialById($idInserted, ASYNC)     [PROMISE - acumular]
-│   (despues de resolve de editorials insertados:)
-│   ├── addSection promise por cada insertada visible
-│   ├── addJournalist promise por cada firma
-│   ├── addTag promise por cada tag (NUEVO)
-│   └── getAsyncMultimedia()                      [PROMISE - ya existente]
-│
-├── Loop recomendadas:
-│   ├── findEditorialById($idRecommended, ASYNC)  [PROMISE - acumular]
-│   (despues de resolve de editorials recomendados:)
-│   ├── addSection promise por cada recomendada visible
-│   ├── addJournalist promise por cada firma
-│   ├── addTag promise por cada tag (NUEVO)
-│   └── getAsyncMultimedia()                      [PROMISE - ya existente]
-│
-├── Tags editorial principal → promises
-├── Journalists editorial principal → promises
-├── Photos body tags → promises
-└── Comments → promise (via QueryLegacyClient ASYNC)
+FASE 1 - Editorial Principal (sync obligatorio)
+├── findEditorialById($id)                        [SYNC - necesita objeto para todo]
+├── findSectionById($sectionId)                   [SYNC - necesita siteId para membership]
+└── getMembershipUrl()                             [ASYNC - ya existente, Promise directa]
 
-FASE 3 - Batch Resolve
-├── Utils::settle(editorialInsertedPromises) → filtrar isVisible → acumular más promises
-├── Utils::settle(editorialRecommendedPromises) → filtrar isVisible → acumular más promises
-├── Utils::settle(tagPromises)                  [BATCH]
-├── Utils::settle(journalistPromises)           [BATCH]
-├── Utils::settle(sectionPromises)              [BATCH]
-├── Utils::settle(photoPromises)                [BATCH]
-├── Utils::settle(multimediaPromises)           [BATCH - ya existente]
-└── membership promise->wait()                  [RESOLVE - ya existente]
+FASE 2 - Dependencias principal (1 grupo async)
+├── collector.add('principal', 'comments', ...)   [Comments async - NUEVO]
+├── collector.add('principal', 'opening', ...)    [Opening multimedia async - NUEVO]
+├── collector.add('principal', 'tag_$id', ...)    [Tags async - loop]
+├── collector.add('principal', 'journalist_$aliasId', ...)  [Journalists async - dedup por aliasId]
+├── collector.add('principal', 'photo_$id', ...)  [Photos body async - loop]
+└── collector.settle('principal')                  [1 settle resuelve todo]
+
+FASE 3 - Transformacion
+├── comments = collector.get('principal', 'comments')
+├── opening = collector.get('principal', 'opening')
+├── tags = filtrar collector.getGroup('principal') por prefix 'tag_'
+├── journalists = transformar con contexto (section, hasTwitter)
+├── photos = filtrar por prefix 'photo_'
+├── multimedia = existente (ya async)
+└── membership = promise->wait() (ya existente)
+
+
+=== PR2: Insertadas ===
+
+FASE 4a - Ronda 1: Editorial fetches insertadas
+├── foreach bodyTagInsertedNews:
+│   └── collector.add('ins_editorials', "ins_$id", ...)
+└── collector.settle('ins_editorials')
+
+FASE 4b - Filtrar visibles + acumular dependencias
+├── foreach collector.getGroup('ins_editorials'):
+│   ├── if !editorial.isVisible() → skip
+│   ├── collector.add('ins_deps', "section_$sectionId", ...)  [dedup por sectionId]
+│   ├── foreach signatures:
+│   │   └── collector.add('ins_deps', "journalist_$aliasId", ...)  [dedup por aliasId]
+│   └── multimedia async (ya existente)
+└── collector.settle('ins_deps')
+
+FASE 4c - Transformar insertadas con dependencias resueltas
+├── section = collector.get('ins_deps', "section_$sectionId")
+├── journalists = transformar con contexto por editorial
+└── Construir resolveData['insertedNews']
+
+
+=== PR3: Recomendadas ===
+
+FASE 5a-5c - Mismo patron que insertadas
+├── Ronda 1: editorial fetches recomendadas
+├── Filtrar visibles + acumular dependencias
+└── Transformar con dependencias resueltas
 ```
 
-### Sub-fases dentro de Fase 2-3
+### Journalist Dedup + Multi-Transform (detalle)
 
-**Problema**: Los editorials de insertadas/recomendadas se necesitan ANTES de poder acumular sus tags/journalists/sections (porque hay que verificar `isVisible()` y extraer IDs).
+```php
+// Acumulacion: dedup por aliasId
+$journalistContexts = []; // Mapa de contextos
 
-**Solucion**: 2 sub-fases de resolve:
-1. **Resolve editorials** (insertadas + recomendadas) via `Utils::settle()`
-2. **Acumular dependencias** de editorials visibles (tags, journalists, sections)
-3. **Resolve dependencias** via `Utils::settle()` adicional
+// Principal
+foreach ($editorial->signatures() as $signature) {
+    $aliasId = $signature->id()->id();
+    $collector->add('principal', "journalist_{$aliasId}",
+        fn() => $this->queryJournalistClient->findJournalistByAliasId(
+            $this->journalistFactory->buildAliasId($aliasId), self::ASYNC
+        )
+    );
+    $journalistContexts[$aliasId][] = [
+        'section' => $section,
+        'hasTwitter' => in_array($editorial->editorialType(), self::TWITTER_TYPES),
+        'target' => 'principal',
+    ];
+}
 
-Esto da **4 rondas HTTP reales**:
-1. Editorial principal + Section principal + Membership (sync + async mix)
-2. Editorials insertadas + recomendadas (batch async)
-3. Tags + Journalists + Sections + Photos + Multimedia (batch async, todo en paralelo)
-4. Opening multimedia (ya existente, se puede mover a ronda 3)
+// Insertadas (post-settle de editorials)
+foreach ($visibleInsertadas as $insEditorial) {
+    foreach ($insEditorial->signatures() as $signature) {
+        $aliasId = $signature->id()->id();
+        $collector->add('ins_deps', "journalist_{$aliasId}",
+            fn() => $this->queryJournalistClient->findJournalistByAliasId(
+                $this->journalistFactory->buildAliasId($aliasId), self::ASYNC
+            )
+        );
+        $journalistContexts[$aliasId][] = [
+            'section' => $insSection,
+            'hasTwitter' => false,
+            'target' => "insertada_{$insEditorial->id()}",
+        ];
+    }
+}
+
+// Post-settle: transformar N veces por aliasId
+foreach ($journalistContexts as $aliasId => $contexts) {
+    $journalist = $collector->get($group, "journalist_{$aliasId}");
+    foreach ($contexts as $ctx) {
+        $signature = $this->journalistsDataTransformer
+            ->write($aliasId, $journalist, $ctx['section'], $ctx['hasTwitter'])
+            ->read();
+        // Asignar signature al target correcto
+    }
+}
+```
 
 ---
 
-## 4. Estructura de Cambios
+## 4. Estructura de Cambios por PR
 
-### Archivos a Modificar
+### PR1: AsyncBatchCollector + Editorial Principal
+
 | Archivo | Cambio |
 |---------|--------|
-| `src/Orchestrator/Chain/EditorialOrchestrator.php` | Refactor execute() con async pattern |
-| `tests/Orchestrator/Chain/EditorialOrchestratorTest.php` | Adaptar mocks para `$async` flag, nuevos tests |
+| `src/Infrastructure/Async/AsyncBatchCollector.php` | **CREAR** - Nueva clase |
+| `tests/Infrastructure/Async/AsyncBatchCollectorTest.php` | **CREAR** - Tests unitarios |
+| `src/Orchestrator/Chain/EditorialOrchestrator.php` | Refactor dependencias principal (tags, journalists, photos, comments, opening) |
+| `tests/Orchestrator/Chain/EditorialOrchestratorTest.php` | Adaptar mocks, nuevos tests |
 
-### Archivos a Crear
-Ninguno. Todo el cambio es dentro del orchestrator existente.
+### PR2: Insertadas Async
 
-### Archivos SIN cambios
+| Archivo | Cambio |
+|---------|--------|
+| `src/Orchestrator/Chain/EditorialOrchestrator.php` | Refactor loop insertadas (2 rondas) |
+| `tests/Orchestrator/Chain/EditorialOrchestratorTest.php` | Tests insertadas async |
+
+### PR3: Recomendadas Async
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/Orchestrator/Chain/EditorialOrchestrator.php` | Refactor loop recomendadas (2 rondas) |
+| `tests/Orchestrator/Chain/EditorialOrchestratorTest.php` | Tests recomendadas async + full suite |
+
+### Archivos SIN cambios (en ningun PR)
 - Clients `ec/*` (soportan async, no se tocan)
 - Config (httplug, services, etc.)
 - Controllers, transformers, compiler passes
@@ -153,67 +270,47 @@ Ninguno. Todo el cambio es dentro del orchestrator existente.
 
 ---
 
-## 5. Metodos Nuevos en EditorialOrchestrator
+## 5. Metodos del EditorialOrchestrator
 
-### fulfilled*() callbacks
+### Nuevos/Refactorizados
 
-```php
-fulfilledTags(array $promises): array          // $id => Tag
-fulfilledJournalists(array $promises): array   // $aliasId => Journalist
-fulfilledSections(array $promises): array      // $id => Section
-fulfilledPhotos(array $promises): array        // $id => MultimediaPhoto
-fulfilledEditorials(array $promises): array    // $id => Editorial
-```
+| Metodo | PR | Descripcion |
+|--------|----|-------------|
+| Constructor | PR1 | Inyectar `AsyncBatchCollector` |
+| `execute()` principal deps | PR1 | Usar collector para tags, journalists, photos, comments, opening |
+| `retrieveAliasFormat()` | PR1 | Eliminar o refactorizar — separar acumulacion de transformacion |
+| `retrievePhotosFromBodyTags()` | PR1 | Refactorizar — acumular promises en collector |
+| `execute()` insertadas | PR2 | 2 rondas async con collector |
+| `execute()` recomendadas | PR3 | 2 rondas async con collector |
 
-### Posible refactor de retrieveAliasFormat()
+### Eliminados
 
-Actualmente `retrieveAliasFormat()` hace HTTP sync + transform. Se separaria en:
-1. **Acumular**: solo registrar aliasId como promise
-2. **Resolver**: batch via `Utils::settle()`
-3. **Transformar**: `journalistsDataTransformer->write()` con journalist ya resuelto
+| Metodo | Razon |
+|--------|-------|
+| `retrieveAliasFormat()` (en su forma actual) | Se descompone en acumulacion + transformacion post-resolve |
 
-Esto elimina el metodo `retrieveAliasFormat()` como esta (sync call + transform), reemplazandolo por:
-- Acumulacion de promises indexadas por aliasId
-- Resolucion batch
-- Transformacion post-resolve usando los datos de `resolvedJournalists[$aliasId]`
+### Sin cambios
 
-### Posible refactor de retrievePhotosFromBodyTags()
-
-Similar: actualmente sync loop con `findPhotoById()`. Se cambia a:
-- Acumular promises: `$photoPromises[$id] = $this->queryMultimediaClient->findPhotoById($id, self::ASYNC)`
-- Resolver: `Utils::settle($photoPromises)`
+| Metodo | Razon |
+|--------|-------|
+| `fulfilledMultimedia()` | Ya funciona con el patron async existente |
+| `getAsyncMultimedia()` | Ya async, compatible con collector |
+| `createCallback()` | Patron existente, sigue usandose |
 
 ---
 
-## 6. Deduplicacion
-
-La deduplicacion es natural al indexar promises por ID:
-
-```php
-$tagPromises[$tagId] = $this->queryTagClient->findTagById($tagId, self::ASYNC);
-```
-
-Si `$tagId` ya existe como key, se sobreescribe con la misma promise (o se puede hacer `??=` para no crear duplicada):
-
-```php
-$tagPromises[$tagId] ??= $this->queryTagClient->findTagById($tagId, self::ASYNC);
-```
-
-Esto garantiza 1 HTTP call por ID unico sin necesidad de un set aparte.
-
----
-
-## 7. Tolerancia a Fallos
+## 6. Tolerancia a Fallos
 
 Misma que el patron actual con `fulfilledMultimedia()`:
-- `Utils::settle()` NO lanza excepciones - devuelve todas las promises con su estado
-- Cada callback `fulfilled*()` filtra por `Promise::FULFILLED`
-- Promises rejected se ignoran silenciosamente (se puede agregar logging)
-- Un tag/journalist/section fallido NO rompe la respuesta completa
+- `Utils::settle()` NO lanza excepciones — devuelve todas las promises con su estado
+- El collector filtra internamente por `Promise::FULFILLED`
+- Promises rejected se ignoran silenciosamente
+- Un tag/journalist/section/comment fallido NO rompe la respuesta completa
+- El logging se mantiene donde ya existe (journalist catch en L293)
 
 ---
 
-## 8. Riesgos
+## 7. Riesgos
 
 | Riesgo | Probabilidad | Impacto | Mitigacion |
 |--------|-------------|---------|------------|
@@ -221,16 +318,17 @@ Misma que el patron actual con `fulfilledMultimedia()`:
 | Rate limiting por rafagas de requests | Baja | Medio | Utils::settle maneja fallos. Monitorear |
 | findEditorialById async no devuelve isVisible | Baja | Alto | Verificar que el objeto Editorial completo se devuelve |
 | Orden de datos cambia en respuesta | Baja | Bajo | APIs JSON no garantizan orden, pero verificar tests |
+| AsyncBatchCollector over-engineering | Baja | Bajo | API minima (5 metodos). Justificada por uso en 3+ PRs |
 
 ---
 
-## 9. Lo que NO incluye
+## 8. Lo que NO incluye
 
-- **Multi-formato** (Fase C del FEATURE): Separado, cuando fetching este estable
-- **Cache layer**: No se añade cache nuevo
+- **Multi-formato** (separar fetching de transformacion): Scope separado, futuro
+- **Cache layer**: No se anade cache nuevo
 - **Nuevos endpoints**: Refactor interno
-- **BatchRequestCollector**: Eliminado de la arquitectura (innecesario con async nativo)
-- **Decorators/Wrappers**: Innecesarios
+- **Tags de insertadas/recomendadas**: Excluido por decision de producto
+- **Decorators/Wrappers sobre clients**: Innecesarios con `$async` flag nativo
 
 ---
 

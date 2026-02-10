@@ -5,6 +5,7 @@
 **Workflow**: task-breakdown
 **Status**: PLANNING_COMPLETE
 **Created**: 2026-02-10
+**Updated**: 2026-02-10
 
 ---
 
@@ -20,16 +21,18 @@
 - [x] 50_state.md
 
 ### Artifacts Skipped (justified)
-- 15_data_model.md - No new data models, uses existing domain objects
+- 15_data_model.md - No new data models, uses existing domain objects + 1 new class (AsyncBatchCollector)
 - 20_api_contracts.md - No new endpoints, internal refactor only
 - 31_tasks_frontend.md - No frontend in this project
 - 35_dependencies.md - Dependencies are existing ec/* packages, documented in 00_requirements_analysis.md
 
 ### Key Findings
-- All 7 clients support (or will support) `$async` boolean flag
-- Pattern: `$async = true` -> return Promise, default -> `->wait(true)`
-- No BatchRequestCollector needed - direct async calls on existing clients
-- No new files to create - refactor entirely within EditorialOrchestrator
+- All 7 clients support `$async` boolean flag
+- AsyncBatchCollector provides configurable async grouping with chaining
+- Journalist dedup: 1 HTTP call per aliasId, N transforms with different contexts
+- isVisible(): 2-round async for insertadas/recomendadas (editorial resolve → filter → deps)
+- Tags of insertadas/recomendadas intentionally excluded (product decision)
+- Comments and opening multimedia included in async scope
 
 ### Next Action
 `/workflows:work editorial-async-batch-collector --role=backend` to start BE-001
@@ -38,17 +41,31 @@
 
 ## Backend Engineer
 **Status**: PENDING
-**Tasks**: 6 (BE-001 to BE-006)
+**Tasks**: 10 (BE-001 to BE-010)
 
-### Task Status
+### Task Status by PR
+
+#### PR1: AsyncBatchCollector + Principal
 | Task | Description | Status |
 |------|-------------|--------|
-| BE-001 | Async batch editorials insertadas + recomendadas | PENDING |
-| BE-002 | Async batch tags | PENDING |
-| BE-003 | Async batch journalists | PENDING |
-| BE-004 | Async batch sections | PENDING |
-| BE-005 | Async batch photos body tags | PENDING |
-| BE-006 | Tags for insertadas/recomendadas (new data) | PENDING |
+| BE-001 | AsyncBatchCollector class | PENDING |
+| BE-002 | Tags principal async | PENDING |
+| BE-003 | Journalists principal async + dedup | PENDING |
+| BE-004 | Photos body tags async | PENDING |
+| BE-005 | Comments async | PENDING |
+| BE-006 | Opening multimedia async | PENDING |
+
+#### PR2: Insertadas Async
+| Task | Description | Status |
+|------|-------------|--------|
+| BE-007 | Insertadas editorial fetches (Ronda 1) | PENDING |
+| BE-008 | Insertadas dependencias + journalist dedup (Ronda 2) | PENDING |
+
+#### PR3: Recomendadas Async
+| Task | Description | Status |
+|------|-------------|--------|
+| BE-009 | Recomendadas editorial fetches (Ronda 1) | PENDING |
+| BE-010 | Recomendadas dependencias + full quality (Ronda 2) | PENDING |
 
 ---
 
@@ -59,20 +76,20 @@
 ### Task Status
 | Task | Description | Status |
 |------|-------------|--------|
-| QA-001 | Regression Tests | PENDING |
-| QA-002 | Batch Behavior Tests | PENDING |
-| QA-003 | Tags Insertadas/Recomendadas Tests | PENDING |
+| QA-001 | AsyncBatchCollector Unit Tests | PENDING |
+| QA-002 | Regression Tests | PENDING |
+| QA-003 | Batch Behavior Tests | PENDING |
 | QA-004 | Full Quality Suite | PENDING |
 
 ---
 
 ## Phase Progress
 
-| Phase | Status | Tasks Done | Tasks Total |
-|-------|--------|------------|-------------|
-| A. Batch Editorials | PENDING | 0 | 1 (BE-001) |
-| B. Batch Dependencias | PENDING | 0 | 4 (BE-002, BE-003, BE-004, BE-005) |
-| C. Tags Insertadas/Recomendadas | PENDING | 0 | 1 (BE-006) |
+| PR | Status | Tasks Done | Tasks Total |
+|----|--------|------------|-------------|
+| PR1: AsyncBatchCollector + Principal | PENDING | 0 | 6 (BE-001 to BE-006) |
+| PR2: Insertadas Async | PENDING | 0 | 2 (BE-007, BE-008) |
+| PR3: Recomendadas Async | PENDING | 0 | 2 (BE-009, BE-010) |
 
 ---
 
@@ -90,18 +107,27 @@ None
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-02-10 | No pipeline assumption | Previous snaapi-scalable-architecture was experimental, not adopted |
-| 2026-02-10 | 3-phase execution model | Dependencies between editorial -> children -> dependencies require sequential phases |
-| 2026-02-10 | Skip frontend/API docs | Backend-only refactor, no new endpoints or data models |
-| 2026-02-10 | All clients support $async | Assumption: all ec/* clients support $async flag. No decorators/wrappers needed |
-| 2026-02-10 | No BatchRequestCollector | Direct async calls on existing clients. No new classes to create |
+| 2026-02-10 | All clients support $async | All ec/* clients support $async flag. No decorators/wrappers needed |
 | 2026-02-10 | TDD methodology | All code written test-first per 30_tasks_backend.md |
+| 2026-02-10 | AsyncBatchCollector abstraction | Configurable async grouping with add/settle/get API. Replaces raw Utils::settle() calls. Justified by use in 3+ PRs |
+| 2026-02-10 | 3 PRs incremental delivery | PR1: infra+principal, PR2: insertadas, PR3: recomendadas. Each PR testeable independently |
+| 2026-02-10 | Journalist dedup HTTP + multi-transform | 1 HTTP call per aliasId, N transforms with different (section, hasTwitter) contexts |
+| 2026-02-10 | isVisible 2-round async | Ronda 1: resolve editorials → filter visible → Ronda 2: dependencies only for visible. Avoids ~5 wasted calls per hidden editorial |
+| 2026-02-10 | Tags insertadas/recomendadas excluded | Product decision — intentionally not fetched. Removed from scope |
+| 2026-02-10 | Comments included in async | findCommentsByEditorialId moved to async via collector |
+| 2026-02-10 | Opening multimedia included in async | findMultimediaOpeningById moved to async via collector |
 
 ---
 
-**State File Version**: 1.1
+**State File Version**: 2.0
 **Last Modified**: 2026-02-10
-**Modified By**: Planner
+**Modified By**: Session claude/refactor-editorial-async-UrZ1X
 
 ### Modified Files (Auto-tracked)
-- /home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/FEATURE_editorial-async-batch-collector.md (2026-02-10T21:12:20+00:00)
-- /home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/50_state.md (2026-02-10T21:12:06+00:00)
+- /home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/50_state.md (2026-02-10T21:46:00+00:00)
+- FEATURE_editorial-async-batch-collector.md (2026-02-10)
+- 00_requirements_analysis.md (2026-02-10)
+- 10_architecture.md (2026-02-10)
+- 30_tasks_backend.md (2026-02-10)
+- 32_tasks_qa.md (2026-02-10)
+- 50_state.md (2026-02-10)
