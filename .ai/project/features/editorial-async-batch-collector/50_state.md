@@ -3,41 +3,70 @@
 ## Overview
 **Feature**: editorial-async-batch-collector
 **Workflow**: task-breakdown
-**Status**: PLANNING
+**Status**: PLANNING_COMPLETE
 **Created**: 2026-02-10
 
 ---
 
 ## Planner
-**Status**: IN_PROGRESS
-**Checkpoint**: Feature definition complete, pending architecture design
+**Status**: COMPLETED
 
 ### Artifacts Created
 - [x] FEATURE_editorial-async-batch-collector.md
+- [x] 00_requirements_analysis.md
+- [x] 10_architecture.md
+- [x] 30_tasks_backend.md
+- [x] 32_tasks_qa.md
+- [x] 50_state.md
 
-### Pending Artifacts
-- [ ] 00_requirements_analysis.md
-- [ ] 10_architecture.md
-- [ ] 30_tasks_backend.md
-- [ ] 32_tasks_qa.md
-- [ ] 50_state.md (this file)
+### Artifacts Skipped (justified)
+- 15_data_model.md - No new data models, uses existing domain objects
+- 20_api_contracts.md - No new endpoints, internal refactor only
+- 31_tasks_frontend.md - No frontend in this project
+- 35_dependencies.md - Dependencies are existing ec/* packages, documented in 00_requirements_analysis.md
 
-### Notes
-- Frontend docs (15_data_model.md, 20_api_contracts.md, 31_tasks_frontend.md, 35_dependencies.md) omitted: this is a backend-only refactor with no frontend, no new API contracts, no new data models, and dependencies are the existing ec/* packages
-- Architecture (10_architecture.md) pending: must be designed from scratch, not inherited from previous experiments
+### Key Findings
+- 4 of 7 clients (Tag, Journalist, Section, Editorial) do NOT support async
+- All use HTTPLug Guzzle7 (async-capable) internally
+- Pattern: `$async` boolean flag -> return Promise or `->wait(true)`
+- BatchRequestCollector will coordinate accumulation and batch resolution
 
 ### Next Action
-Run `/workflows:route` to begin formal workflow
+`/workflows:work editorial-async-batch-collector --role=backend` to start BE-001
 
 ---
 
 ## Backend Engineer
 **Status**: PENDING
+**Tasks**: 8 (BE-001 to BE-008)
+
+### Task Status
+| Task | Description | Status |
+|------|-------------|--------|
+| BE-001 | BatchRequestCollectorInterface | PENDING |
+| BE-002 | BatchRequestCollector Implementation | PENDING |
+| BE-003 | Service Registration | PENDING |
+| BE-004 | Inject Collector into EditorialOrchestrator | PENDING |
+| BE-005 | Refactor tags accumulation | PENDING |
+| BE-006 | Refactor journalists accumulation | PENDING |
+| BE-007 | Refactor sections + photos accumulation | PENDING |
+| BE-008 | Tags for insertadas/recomendadas | PENDING |
 
 ---
 
 ## QA
 **Status**: PENDING
+**Tasks**: 6 (QA-001 to QA-006)
+
+### Task Status
+| Task | Description | Status |
+|------|-------------|--------|
+| QA-001 | Unit Tests BatchRequestCollector | PENDING |
+| QA-002 | Integration Smoke Test | PENDING |
+| QA-003 | Regression Tests | PENDING |
+| QA-004 | Batch Behavior Tests | PENDING |
+| QA-005 | Tags Insertadas/Recomendadas Tests | PENDING |
+| QA-006 | Full Quality Suite | PENDING |
 
 ---
 
@@ -45,9 +74,9 @@ Run `/workflows:route` to begin formal workflow
 
 | Phase | Status | Tasks Done | Tasks Total |
 |-------|--------|------------|-------------|
-| A. Request Collector | PENDING | 0 | TBD |
-| B. Async Batch Execution | PENDING | 0 | TBD |
-| C. Multi-formato | PENDING | 0 | TBD |
+| A. BatchRequestCollector | PENDING | 0 | 3 (BE-001, BE-002, BE-003) |
+| B. Orchestrator Refactor | PENDING | 0 | 4 (BE-004, BE-005, BE-006, BE-007) |
+| C. Tags Insertadas/Recomendadas | PENDING | 0 | 1 (BE-008) |
 
 ---
 
@@ -67,6 +96,9 @@ None
 | 2026-02-10 | No pipeline assumption | Previous snaapi-scalable-architecture was experimental, not adopted |
 | 2026-02-10 | 3-phase execution model | Dependencies between editorial -> children -> dependencies require sequential phases |
 | 2026-02-10 | Skip frontend/API docs | Backend-only refactor, no new endpoints or data models |
+| 2026-02-10 | BatchRequestCollector pattern | Accumulate IDs, deduplicate, resolve in batch. Agnostic of client async support |
+| 2026-02-10 | Clients ec/* not modified | Use as-is, concurrency via collector coordination |
+| 2026-02-10 | TDD methodology | All code written test-first per 30_tasks_backend.md |
 
 ---
 
@@ -75,4 +107,4 @@ None
 **Modified By**: Planner
 
 ### Modified Files (Auto-tracked)
-- /home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/50_state.md (2026-02-10T20:24:30+00:00)
+- /home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/50_state.md (2026-02-10T21:06:15+00:00)
