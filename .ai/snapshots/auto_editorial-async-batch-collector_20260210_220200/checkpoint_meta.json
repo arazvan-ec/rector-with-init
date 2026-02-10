@@ -1,0 +1,7 @@
+{
+    "timestamp": "2026-02-10T22:02:00+00:00",
+    "session_id": "d092553c-4b0b-42d0-8e2e-1df6fefefdb0",
+    "stop_reason": "unknown",
+    "feature": "editorial-async-batch-collector",
+    "type": "auto_stop_checkpoint"
+}
