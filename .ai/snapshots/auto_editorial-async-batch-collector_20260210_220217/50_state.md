@@ -124,11 +124,6 @@ None
 **Modified By**: Session claude/refactor-editorial-async-UrZ1X
 
 ### Modified Files (Auto-tracked)
-- /home/user/rector-with-init/tests/Orchestrator/Chain/EditorialOrchestratorTest.php (2026-02-10T22:39:10+00:00)
-- /home/user/rector-with-init/src/Orchestrator/Chain/EditorialOrchestrator.php (2026-02-10T22:32:56+00:00)
-- /home/user/rector-with-init/src/Infrastructure/Async/AsyncBatchCollector.php (2026-02-10T22:12:14+00:00)
-- /home/user/rector-with-init/src/Infrastructure/Async/AsyncBatchCollectorInterface.php (2026-02-10T22:12:03+00:00)
-- /home/user/rector-with-init/tests/Infrastructure/Async/AsyncBatchCollectorTest.php (2026-02-10T22:10:12+00:00)
 - /home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/50_state.md (2026-02-10T21:46:00+00:00)
 - FEATURE_editorial-async-batch-collector.md (2026-02-10)
 - 00_requirements_analysis.md (2026-02-10)
@@ -136,6 +131,3 @@ None
 - 30_tasks_backend.md (2026-02-10)
 - 32_tasks_qa.md (2026-02-10)
 - 50_state.md (2026-02-10)
-
-### Test Runs (Auto-tracked)
-- 2026-02-10T22:10:21+00:00: ./bin/phpunit tests/Infrastructure/Async/AsyncBatchCollectorTest.php 2>&1 | tail -20
