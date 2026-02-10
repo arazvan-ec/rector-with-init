@@ -1,1 +1,2 @@
 [2026-02-10T20:16:22+00:00] session=0ff95059-8169-4f36-ba44-e0c9c55da033 tool=Write file=/home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/SPEC-async-batch-collector.md trust=high action=ALLOWED
+[2026-02-10T20:19:10+00:00] session=0ff95059-8169-4f36-ba44-e0c9c55da033 tool=Edit file=/home/user/rector-with-init/.ai/project/features/editorial-async-batch-collector/SPEC-async-batch-collector.md trust=high action=ALLOWED

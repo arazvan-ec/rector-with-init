@@ -1,0 +1,7 @@
+{
+    "timestamp": "2026-02-10T20:19:26+00:00",
+    "session_id": "0ff95059-8169-4f36-ba44-e0c9c55da033",
+    "stop_reason": "unknown",
+    "feature": "FEATURE_X",
+    "type": "auto_stop_checkpoint"
+}
