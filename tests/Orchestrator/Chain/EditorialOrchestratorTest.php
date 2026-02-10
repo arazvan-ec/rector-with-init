@@ -924,6 +924,7 @@ class EditorialOrchestratorTest extends TestCase
                 'section' => $sectionInsertedMock,
                 'multimediaId' => '',
                 'signatures' => $signaturesInsertedEditorialArray,
+                'signatureAliasIds' => $bodyTag['signatures'],
             ];
             $bodyTagsInsertedNews[] = $bodyElementMock;
         }
@@ -1038,6 +1039,7 @@ class EditorialOrchestratorTest extends TestCase
                 'section' => $sectionRecommendedMock,
                 'multimediaId' => '',
                 'signatures' => $signaturesRecommendedEditorialArray,
+                'signatureAliasIds' => $editorialRecommended['signatures'],
             ];
         }
 

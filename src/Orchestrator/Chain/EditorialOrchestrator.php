@@ -135,13 +135,17 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
                 /** @var Section $sectionInserted */
                 $sectionInserted = $this->querySectionClient->findSectionById($insertedEditorials->sectionId());
 
-                $signatures = [];
+                $insertedAliasIds = [];
                 /** @var Signature $signature */
                 foreach ($insertedEditorials->signatures()->getArrayCopy() as $signature) {
-                    $result = $this->retrieveAliasFormat($signature->id()->id(), $sectionInserted);
-                    if (!empty($result)) {
-                        $signatures[] = $result;
-                    }
+                    $aliasId = $signature->id()->id();
+                    $insertedAliasIds[] = $aliasId;
+                    $aliasIdModel = $this->journalistFactory->buildAliasId($aliasId);
+                    $this->asyncBatchCollector->add(
+                        'principal',
+                        'journalist_ins_' . $idInserted . '_' . $aliasId,
+                        fn () => $this->queryJournalistClient->findJournalistByAliasId($aliasIdModel, self::ASYNC),
+                    );
                 }
 
                 if (!empty($insertedEditorials->multimedia()->id()->id())) {
@@ -156,7 +160,8 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
                 $resolveData['insertedNews'][$idInserted] = [
                     'editorial' => $insertedEditorials,
                     'section' => $sectionInserted,
-                    'signatures' => $signatures,
+                    'signatures' => [],
+                    'signatureAliasIds' => $insertedAliasIds,
                     'multimediaId' => $multimediaId,
                 ];
             }
@@ -176,13 +181,17 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
                     /** @var Section $sectionInserted */
                     $sectionInserted = $this->querySectionClient->findSectionById($recommendedEditorial->sectionId());
 
-                    $signatures = [];
+                    $recommendedAliasIds = [];
                     /** @var Signature $signature */
                     foreach ($recommendedEditorial->signatures()->getArrayCopy() as $signature) {
-                        $result = $this->retrieveAliasFormat($signature->id()->id(), $sectionInserted);
-                        if (!empty($result)) {
-                            $signatures[] = $result;
-                        }
+                        $aliasId = $signature->id()->id();
+                        $recommendedAliasIds[] = $aliasId;
+                        $aliasIdModel = $this->journalistFactory->buildAliasId($aliasId);
+                        $this->asyncBatchCollector->add(
+                            'principal',
+                            'journalist_rec_' . $idRecommended . '_' . $aliasId,
+                            fn () => $this->queryJournalistClient->findJournalistByAliasId($aliasIdModel, self::ASYNC),
+                        );
                     }
 
                     if (!empty($recommendedEditorial->multimedia()->id()->id())) {
@@ -197,7 +206,8 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
                     $resolveData['recommendedEditorials'][$idRecommended] = [
                         'editorial' => $recommendedEditorial,
                         'section' => $sectionInserted,
-                        'signatures' => $signatures,
+                        'signatures' => [],
+                        'signatureAliasIds' => $recommendedAliasIds,
                         'multimediaId' => $multimediaId,
                     ];
                     $recommendedNews[] = $recommendedEditorial;
@@ -256,6 +266,9 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
         $resolveData['multimediaOpening'] = $this->resolveOpeningMultimedia();
         $resolveData['photoFromBodyTags'] = $this->resolvePhotos($bodyTagPictures, $bodyTagMembershipCards);
 
+        $this->resolveSubEditorialSignatures($resolveData['insertedNews'], 'ins');
+        $this->resolveSubEditorialSignatures($resolveData['recommendedEditorials'], 'rec');
+
         $tags = [];
         foreach ($editorialTags as $tag) {
             $tagId = $tag->id();
@@ -311,23 +324,30 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
     }
 
     /**
-     * @return array<mixed>
+     * @param array<string, array{editorial: Editorial, section: Section, signatures: array<mixed>, signatureAliasIds: array<string>, multimediaId: string}> $subEditorials
      */
-    private function retrieveAliasFormat(string $aliasId, Section $section, bool $hasTwitter = false): array
+    private function resolveSubEditorialSignatures(array &$subEditorials, string $prefix): void
     {
-        $signature = [];
-        $aliasIdModel = $this->journalistFactory->buildAliasId($aliasId);
+        foreach ($subEditorials as $subEditorialId => &$data) {
+            /** @var Section $subSection */
+            $subSection = $data['section'];
 
-        try {
-            /** @var Journalist $journalist */
-            $journalist = $this->queryJournalistClient->findJournalistByAliasId($aliasIdModel);
-
-            $signature = $this->journalistsDataTransformer->write($aliasId, $journalist, $section, $hasTwitter)->read();
-        } catch (\Throwable $throwable) {
-            $this->logger->error($throwable->getMessage());
+            $signatures = [];
+            /** @var array<string> $aliasIds */
+            $aliasIds = $data['signatureAliasIds'];
+            foreach ($aliasIds as $aliasId) {
+                $key = 'journalist_' . $prefix . '_' . $subEditorialId . '_' . $aliasId;
+                if ($this->asyncBatchCollector->has('principal', $key)) {
+                    /** @var Journalist $journalist */
+                    $journalist = $this->asyncBatchCollector->get('principal', $key);
+                    $result = $this->journalistsDataTransformer->write($aliasId, $journalist, $subSection, false)->read();
+                    if (!empty($result)) {
+                        $signatures[] = $result;
+                    }
+                }
+            }
+            $data['signatures'] = $signatures;
         }
-
-        return $signature;
     }
 
     public function canOrchestrate(): string
