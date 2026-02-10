@@ -244,10 +244,6 @@ See `DECISIONS.md` for full decision log.
 **Modified By**: Planner Agent
 
 ### Modified Files (Auto-tracked)
-- /home/user/rector-with-init/.ai/project/compound_log.md (2026-02-10T19:11:35+00:00)
-- /home/user/rector-with-init/.ai/project/specs/spec-manifest.yaml (2026-02-10T19:11:31+00:00)
-- /home/user/rector-with-init/.ai/project/compound-memory.md (2026-02-10T19:11:13+00:00)
-- /home/user/rector-with-init/.ai/project/providers-override.yaml (2026-02-10T19:10:58+00:00)
 - /home/user/workflow/.ai/project/analysis/soul-md-analysis.md (2026-02-10T18:29:47+00:00)
 - /home/user/workflow/plugins/multi-agent-workflow/agents/review/ddd-compliance.md (2026-02-10T18:27:40+00:00)
 - /home/user/workflow/plugins/multi-agent-workflow/agents/review/performance-review.md (2026-02-10T18:27:35+00:00)

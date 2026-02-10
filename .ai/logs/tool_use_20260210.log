@@ -1,0 +1,4 @@
+[2026-02-10T19:10:57+00:00] session=5888c056-b5b1-4a3c-929a-4d61fd52bf53 tool=Write file=/home/user/rector-with-init/.ai/project/providers-override.yaml trust=high action=ALLOWED
+[2026-02-10T19:11:13+00:00] session=5888c056-b5b1-4a3c-929a-4d61fd52bf53 tool=Write file=/home/user/rector-with-init/.ai/project/compound-memory.md trust=high action=ALLOWED
+[2026-02-10T19:11:31+00:00] session=5888c056-b5b1-4a3c-929a-4d61fd52bf53 tool=Write file=/home/user/rector-with-init/.ai/project/specs/spec-manifest.yaml trust=high action=ALLOWED
+[2026-02-10T19:11:34+00:00] session=5888c056-b5b1-4a3c-929a-4d61fd52bf53 tool=Write file=/home/user/rector-with-init/.ai/project/compound_log.md trust=high action=ALLOWED
