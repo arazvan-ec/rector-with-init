@@ -58,13 +58,12 @@ Editorial con 3 insertadas, 4 recomendadas, 2 firmas cada una, 5 tags, 3 fotos b
 
 ## Acceptance Criteria
 
-### Fase A: Request Collector
-- [ ] Servicio que acumula IDs por bounded context (tags, journalists, sections, multimedia, photos)
-- [ ] Deduplicacion de IDs antes de lanzar peticiones
-- [ ] Reutilizable por cualquier orquestador, no solo editorial
-- [ ] Tests unitarios con 100% cobertura del collector
+### Fase A: Batch Editorials
+- [ ] Editorials insertadas se resuelven via `Utils::settle()` batch async
+- [ ] Editorials recomendadas se resuelven via `Utils::settle()` batch async
+- [ ] `isVisible()` se verifica post-settle
 
-### Fase B: Async Batch Execution
+### Fase B: Batch Dependencias
 - [ ] Todas las llamadas HTTP independientes se ejecutan en paralelo via `Utils::settle()`
 - [ ] Maximo 3 fases secuenciales (editorial principal -> hijos -> dependencias)
 - [ ] Tags de insertadas y recomendadas se recuperan
@@ -89,11 +88,11 @@ Editorial con 3 insertadas, 4 recomendadas, 2 firmas cada una, 5 tags, 3 fotos b
 
 ## Specs Funcionales
 
-### SP-01: Request Collector inyectable
-Servicio que acumula IDs por bounded context. Metodos para registrar IDs y metodo `resolveAll()` que lanza todas las promises y devuelve resultados indexados.
+### SP-01: Async directo con `$async` flag
+Todos los clients soportan `$client->findXById($id, self::ASYNC)` devolviendo Promise. Se acumulan promises y se resuelven con `Utils::settle()`.
 
 ### SP-02: Deduplicacion de IDs
-Un mismo tag/journalist/section puede aparecer en editorial principal + insertadas + recomendadas. El collector deduplica antes de lanzar peticiones.
+Un mismo tag/journalist/section puede aparecer en editorial principal + insertadas + recomendadas. Indexar promises por ID (`$promises[$id] ??= ...`) deduplica naturalmente.
 
 ### SP-03: Tags para noticias insertadas
 Recuperar tags de cada noticia insertada e incluirlos en la respuesta transformada.
@@ -110,8 +109,8 @@ Recuperar tags de cada editorial recomendado e incluirlos en la respuesta.
 ### SP-07: Photos de body tags en batch async
 `retrievePhotosFromBodyTags()` (L306-323) hace HTTP sync por cada foto. Mover a batch async.
 
-### SP-08: Verificar soporte async en clients externos
-Los clients (`QueryTagClient`, `QueryJournalistClient`, `QuerySectionClient`) vienen de paquetes `ec/*`. Verificar si soportan flag `$async` para devolver Promise. Si no, evaluar como extenderlos o decorarlos.
+### SP-08: Soporte async en clients externos
+Todos los clients `ec/*` soportan (o soportaran) el flag `$async`. No se necesitan decorators ni wrappers.
 
 ### SP-09: Arquitectura multi-formato
 Separar la capa de fetching (comun) de la capa de transformacion (formato-especifica). Actualmente solo existe `src/Application/DataTransformer/Apps/`. Diseñar extension para soportar `Web/` y futuros formatos.
@@ -166,6 +165,6 @@ Reduccion: ~90% en tiempo de I/O
 
 ---
 
-**Document Status**: PLANNING
+**Document Status**: PLANNING_COMPLETE
 **Last Updated**: 2026-02-10
 **Author**: Session claude/refactor-editorial-async-UrZ1X

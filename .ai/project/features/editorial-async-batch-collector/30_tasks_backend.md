@@ -5,6 +5,7 @@
 > **Role**: Backend Engineer
 > **Methodology**: TDD
 > **Created**: 2026-02-10
+> **Updated**: 2026-02-10
 
 ---
 
@@ -12,128 +13,80 @@
 
 | Phase | Tasks | Priority | Effort |
 |-------|-------|----------|--------|
-| A. BatchRequestCollector | BE-001 to BE-003 | HIGH | Medium |
-| B. EditorialOrchestrator Refactor | BE-004 to BE-007 | HIGH | High |
-| C. Tags insertadas/recomendadas | BE-008 | MEDIUM | Low |
+| A. Batch Editorials (insertadas + recomendadas) | BE-001 | HIGH | Medium |
+| B. Batch Dependencias (tags, journalists, sections, photos) | BE-002 to BE-005 | HIGH | High |
+| C. Tags insertadas/recomendadas (datos faltantes) | BE-006 | MEDIUM | Low |
+
+**Nota**: No se crean archivos nuevos. Todo el refactor es en `EditorialOrchestrator.php` + tests.
 
 ---
 
-## Phase A: BatchRequestCollector
+## Phase A: Batch Editorials
 
-### BE-001: BatchRequestCollectorInterface
-
-**Priority**: HIGH
-**Reference**: `10_architecture.md` section 2.1
-**Methodology**: TDD
-**Max Iterations**: 5
-
-**Requirements**:
-- Interfaz con metodos `add*()` y `resolve*()` por bounded context
-- Tipos de retorno estrictos con generics PHPStan
-- No depende de implementacion concreta de clients
-
-**Files to Create**:
-```
-src/Infrastructure/Http/BatchRequestCollectorInterface.php
-```
-
-**Acceptance Criteria**:
-- [ ] Interfaz definida con metodos para Tag, Journalist, Section, Photo
-- [ ] PHPStan level 9 pasa
-- [ ] No tiene dependencias externas
-
-**Done When**: Interfaz compilable, PHPStan clean.
-
----
-
-### BE-002: BatchRequestCollector Implementation
+### BE-001: Async batch de editorials insertadas y recomendadas
 
 **Priority**: HIGH
-**Reference**: `10_architecture.md` section 2.1, 3
+**Reference**: `10_architecture.md` section 3 (sub-fases)
 **Methodology**: TDD
 **Max Iterations**: 10
 
 **Requirements**:
-- Implementa `BatchRequestCollectorInterface`
-- Recibe los 4 clients por constructor injection (Tag, Journalist, Section, Multimedia)
-- Cada `add*()` registra ID en un `array<string, true>` (dedup natural por clave)
-- Cada `resolve*()` itera IDs acumulados, ejecuta client call, maneja fallos
-- `LoggerInterface` para loguear fallos individuales
-- Tolerancia a fallos: un ID fallido no rompe el batch
+- Los loops de insertadas (L127-161) y recomendadas (L167-207) actualmente hacen `findEditorialById($id)` sync por cada editorial hijo
+- Cambiar a: acumular promises con `findEditorialById($id, self::ASYNC)`, resolver con `Utils::settle()`, filtrar `isVisible()` despues
+- Mantener acumulacion de multimedia async (ya existente)
 
-**Files to Create**:
+**Cambio conceptual**:
 ```
-src/Infrastructure/Http/BatchRequestCollector.php
-tests/Infrastructure/Http/BatchRequestCollectorTest.php
+ANTES:  foreach insertadas → findEditorial(sync) → if visible → acumular datos
+DESPUES: foreach insertadas → findEditorial(ASYNC) → settle → foreach visible → acumular datos
+```
+
+**Files to Modify**:
+```
+src/Orchestrator/Chain/EditorialOrchestrator.php
+tests/Orchestrator/Chain/EditorialOrchestratorTest.php
 ```
 
 **TDD Approach**:
-1. **RED**: Test `resolveTagsReturnsEmptyWhenNoIdsAdded`
-2. **GREEN**: Implementar `resolveTags()` basico
-3. **RED**: Test `resolveTagsDeduplicatesIds`
-4. **GREEN**: Implementar dedup
-5. **RED**: Test `resolveTagsSkipsFailedIds`
-6. **GREEN**: Implementar try/catch por ID
-7. **RED**: Test `resolveTagsReturnsIndexedById`
-8. **GREEN**: Implementar indexacion
-9. **REFACTOR**: Extraer patron comun entre resolve methods
+1. **RED**: Test que verifica `findEditorialById` se llama con `self::ASYNC` para insertadas
+2. **GREEN**: Cambiar loop insertadas a async + settle
+3. **RED**: Test que editoriales no visibles se excluyen post-settle
+4. **GREEN**: Filtrar `isVisible()` despues del settle
+5. **RED**: Test para recomendadas con mismo patron
+6. **GREEN**: Cambiar loop recomendadas a async + settle
+7. **REFACTOR**: Extraer metodo comun si hay repeticion excesiva
 
 **Acceptance Criteria**:
-- [ ] Deduplicacion de IDs funciona
-- [ ] Fallos individuales se omiten y loguean
-- [ ] Resultados indexados por ID
-- [ ] Cada resolve method es independiente
-- [ ] PHPStan level 9 pasa
-- [ ] Tests unitarios con 100% cobertura del collector
+- [ ] Insertadas se resuelven via `Utils::settle()` batch
+- [ ] Recomendadas se resuelven via `Utils::settle()` batch
+- [ ] `isVisible()` se verifica despues del settle
+- [ ] Multimedia async sigue funcionando (ya existente)
+- [ ] Tests existentes adaptados y verdes
 
 **Verification**:
 ```bash
-./bin/phpunit tests/Infrastructure/Http/BatchRequestCollectorTest.php
+./bin/phpunit tests/Orchestrator/Chain/EditorialOrchestratorTest.php
 ```
 
-**Done When**: Todos los tests verdes, PHPStan clean, collector funcional.
+**Done When**: Tests verdes, editorial insertadas/recomendadas resueltas en batch.
 
-**Escape Hatch**: Si los clients sync dan problemas de tipo o interfaz, usar reflection para acceder al HttpAsyncClient interno.
+**Escape Hatch**: Si el filtrado post-settle de `isVisible()` genera problemas con el flujo de datos, mantener sync para editorials pero hacer async todo lo demas.
 
 ---
 
-### BE-003: Service Registration
+## Phase B: Batch Dependencias
+
+### BE-002: Async batch de tags
 
 **Priority**: HIGH
-**Methodology**: Configuration
-**Max Iterations**: 3
-
-**Requirements**:
-- Registrar `BatchRequestCollector` como servicio Symfony
-- Autowire + autoconfigure
-- Inyectar los 4 clients existentes y LoggerInterface
-
-**Files to Create/Modify**:
-```
-config/services.yaml  (o config/packages/batch_collector.yaml)
-```
-
-**Acceptance Criteria**:
-- [ ] `make test_container` pasa
-- [ ] Servicio inyectable en `EditorialOrchestrator`
-
-**Done When**: Container compila, servicio resolvible.
-
----
-
-## Phase B: EditorialOrchestrator Refactor
-
-### BE-004: Inyectar BatchRequestCollector en EditorialOrchestrator
-
-**Priority**: HIGH
-**Reference**: `10_architecture.md` section 2.2
 **Methodology**: TDD
-**Max Iterations**: 5
+**Max Iterations**: 7
 
 **Requirements**:
-- Agregar `BatchRequestCollectorInterface` al constructor
-- No cambiar comportamiento todavia - solo inyectar
-- Tests existentes deben seguir pasando
+- El loop de tags (L222-230) actualmente hace `findTagById($id)` sync por cada tag
+- Cambiar a: acumular promises con `findTagById($id, self::ASYNC)`, indexadas por ID (dedup)
+- Resolver con `Utils::settle()` + callback `fulfilledTags()`
+- Crear metodo `fulfilledTags()` siguiendo patron de `fulfilledMultimedia()`
 
 **Files to Modify**:
 ```
@@ -142,28 +95,43 @@ tests/Orchestrator/Chain/EditorialOrchestratorTest.php
 ```
 
 **TDD Approach**:
-1. **RED**: Test existente falla por parametro nuevo en constructor
-2. **GREEN**: Agregar mock del collector al setUp
-3. **REFACTOR**: Verificar que todos los tests existentes pasan
+1. **RED**: Test que `findTagById` se llama con `self::ASYNC` y promises se acumulan
+2. **GREEN**: Cambiar loop a async
+3. **RED**: Test que tags duplicados solo generan 1 promise (dedup por key)
+4. **GREEN**: Indexar por `$tagId` con `??=`
+5. **RED**: Test `fulfilledTags()` filtra correctamente
+6. **GREEN**: Implementar callback
 
 **Acceptance Criteria**:
-- [ ] Constructor actualizado con `BatchRequestCollectorInterface`
-- [ ] Todos los tests existentes pasan sin cambios funcionales
-- [ ] PHPStan level 9 pasa
+- [ ] Tags se resuelven via batch async
+- [ ] Deduplicacion por ID funciona
+- [ ] `fulfilledTags()` callback implementado
+- [ ] Tag fallido no rompe la respuesta
+- [ ] `$tags` resultado compatible con `detailsAppsDataTransformer->write()`
 
-**Done When**: Build verde, cero regresion.
+**Done When**: Tests verdes, tags en batch.
 
 ---
 
-### BE-005: Refactor fase de acumulacion (tags)
+### BE-003: Async batch de journalists
 
 **Priority**: HIGH
 **Methodology**: TDD
 **Max Iterations**: 10
 
 **Requirements**:
-- Reemplazar el loop sync de tags (L222-230) por `collector->addTag()` + `collector->resolveTags()`
-- Mantener el mismo resultado final: `$tags` array para `detailsAppsDataTransformer->write()`
+- `retrieveAliasFormat()` (L281-296) se llama en 3 lugares: insertadas (L139), recomendadas (L180), principal (L243-252)
+- Cada llamada hace `findJournalistByAliasId($aliasId)` sync + `journalistsDataTransformer->write()` transform
+- Separar en: acumular promise `findJournalistByAliasId($aliasId, self::ASYNC)`, resolver batch, transformar post-resolve
+- Necesita mapear cada journalist resuelto a su contexto (section, hasTwitter)
+
+**Complejidad**: ALTA - hay que mantener la relacion `aliasId -> section -> hasTwitter` para la transformacion post-resolve.
+
+**Estrategia**:
+- Acumular promises indexadas por `$aliasId` (dedup natural)
+- Mantener un mapa `$aliasId -> {section, hasTwitter}` por contexto
+- Resolver batch journalists
+- Transformar con `journalistsDataTransformer->write()` usando journalist resuelto + datos del mapa
 
 **Files to Modify**:
 ```
@@ -172,70 +140,41 @@ tests/Orchestrator/Chain/EditorialOrchestratorTest.php
 ```
 
 **TDD Approach**:
-1. **RED**: Test que verifica que collector.addTag se llama N veces
-2. **GREEN**: Reemplazar loop sync por collector.addTag
-3. **RED**: Test que verifica resolveTags se llama una vez y resultado se usa
-4. **GREEN**: Llamar resolveTags y usar resultado
-5. **REFACTOR**: Eliminar metodo original si queda sin uso
+1. **RED**: Test que `findJournalistByAliasId` se llama con `self::ASYNC`
+2. **GREEN**: Acumular promises para insertadas
+3. **RED**: Test que promises de recomendadas se acumulan
+4. **GREEN**: Acumular para recomendadas y principal
+5. **RED**: Test que `fulfilledJournalists()` filtra correctamente
+6. **GREEN**: Implementar callback
+7. **RED**: Test que signatures se transforman correctamente post-resolve
+8. **GREEN**: Reconstruir signatures con journalists resueltos
+9. **REFACTOR**: Simplificar `retrieveAliasFormat()` o eliminarlo
 
 **Acceptance Criteria**:
-- [ ] Tags se acumulan via collector
-- [ ] Se resuelven en batch
-- [ ] Resultado identico al original
-- [ ] Tests existentes adaptados y verdes
-
-**Done When**: Tests verdes, comportamiento identico.
-
----
-
-### BE-006: Refactor fase de acumulacion (journalists)
-
-**Priority**: HIGH
-**Methodology**: TDD
-**Max Iterations**: 10
-
-**Requirements**:
-- Reemplazar `retrieveAliasFormat()` sync (llamada en 3 lugares) por `collector->addJournalist()` + `collector->resolveJournalists()`
-- El metodo `retrieveAliasFormat()` actualmente hace HTTP + transform. Separar en: acumular ID, resolver batch, transformar despues
-- Mantener `JournalistsDataTransformer->write()` que necesita `Journalist` + `Section` + flags
-
-**Complejidad**: ALTA - `retrieveAliasFormat()` se usa en insertadas (L139), recomendadas (L180), y principal (L243-252). Cada uso necesita el `Section` correspondiente y flag `$hasTwitter`.
-
-**Files to Modify**:
-```
-src/Orchestrator/Chain/EditorialOrchestrator.php
-tests/Orchestrator/Chain/EditorialOrchestratorTest.php
-```
-
-**TDD Approach**:
-1. **RED**: Test que verifica addJournalist se llama con todos los aliasIds
-2. **GREEN**: Acumular aliasIds en loops de insertadas, recomendadas, principal
-3. **RED**: Test que resolveJournalists se llama y resultado se mapea correctamente
-4. **GREEN**: Resolver batch y reconstruir signatures con datos resueltos
-5. **REFACTOR**: Eliminar o simplificar `retrieveAliasFormat()`
-
-**Acceptance Criteria**:
-- [ ] Todas las firmas se acumulan antes de resolver
-- [ ] Se resuelven en un unico batch
-- [ ] Signatures de insertadas, recomendadas y principal correctas
-- [ ] `hasTwitter` flag se mantiene para editorial principal
+- [ ] Todos los journalists se resuelven en un batch
+- [ ] Deduplicacion por aliasId
+- [ ] Signatures de insertadas correctas
+- [ ] Signatures de recomendadas correctas
+- [ ] Signatures de principal con `hasTwitter` flag
+- [ ] `retrieveAliasFormat()` refactorizado o eliminado
 
 **Done When**: Tests verdes, signatures identicas al original.
 
-**Escape Hatch**: Si la complejidad de reconstruir signatures es excesiva, mantener `retrieveAliasFormat()` pero envolver en promise pattern.
+**Escape Hatch**: Si la complejidad de reconstruir signatures es excesiva, mantener `retrieveAliasFormat()` para el editorial principal (2 calls sync) y solo hacer async para insertadas/recomendadas.
 
 ---
 
-### BE-007: Refactor fase de acumulacion (sections + photos)
+### BE-004: Async batch de sections
 
 **Priority**: HIGH
 **Methodology**: TDD
-**Max Iterations**: 10
+**Max Iterations**: 7
 
 **Requirements**:
-- Sections: `findSectionById` se llama sync en insertadas (L134) y recomendadas (L175). Acumular + batch
-- Photos: `retrievePhotosFromBodyTags` hace sync loop (L306-323). Acumular + batch
-- La section del editorial PRINCIPAL (L115) sigue siendo sync porque se necesita para membership promise (L117)
+- `findSectionById` se llama sync para insertadas (L134) y recomendadas (L175)
+- Acumular promises con `findSectionById($sectionId, self::ASYNC)`, indexadas por sectionId (dedup)
+- Resolver batch, mapear sections a sus editorials
+- Section del editorial PRINCIPAL (L115) sigue sync (necesaria para membership en L117)
 
 **Files to Modify**:
 ```
@@ -244,36 +183,72 @@ tests/Orchestrator/Chain/EditorialOrchestratorTest.php
 ```
 
 **TDD Approach**:
-1. **RED**: Test addSection llamado por cada insertada/recomendada
-2. **GREEN**: Acumular sectionIds
-3. **RED**: Test resolveSections devuelve sections correctas
-4. **GREEN**: Resolver batch y mapear a insertadas/recomendadas
-5. **RED**: Test addPhoto llamado por cada body tag
-6. **GREEN**: Acumular photoIds
-7. **REFACTOR**: Simplificar `retrievePhotosFromBodyTags` para que solo acumule
+1. **RED**: Test que `findSectionById` se llama con `self::ASYNC` para insertadas
+2. **GREEN**: Acumular promises
+3. **RED**: Test que sections de recomendadas se acumulan
+4. **GREEN**: Acumular para recomendadas
+5. **RED**: Test que `fulfilledSections()` filtra correctamente
+6. **GREEN**: Implementar callback
+7. **REFACTOR**: Verificar que section principal sigue sync
 
 **Acceptance Criteria**:
-- [ ] Sections de insertadas/recomendadas via batch
-- [ ] Photos de body tags via batch
-- [ ] Section principal sigue sync (necesaria para membership)
-- [ ] Tests verdes
+- [ ] Sections de insertadas/recomendadas via batch async
+- [ ] Section principal sigue sync
+- [ ] Deduplicacion por sectionId
+- [ ] Sections resueltas se mapean a sus editorials
 
-**Done When**: Tests verdes, todos los resolves en fase batch.
+**Done When**: Tests verdes, sections en batch.
+
+**Nota**: Las sections se necesitan DESPUES de resolver editorials (BE-001) porque el `sectionId` viene del objeto Editorial. Depende de BE-001.
 
 ---
 
-## Phase C: Tags Insertadas/Recomendadas (Datos Faltantes)
+### BE-005: Async batch de photos body tags
 
-### BE-008: Recuperar tags de insertadas y recomendadas
+**Priority**: HIGH
+**Methodology**: TDD
+**Max Iterations**: 7
+
+**Requirements**:
+- `retrievePhotosFromBodyTags()` (L306-323) y `addPhotoToArray()` (L330-340) hacen `findPhotoById($id)` sync por cada foto
+- Cambiar a: acumular promises con `findPhotoById($id, self::ASYNC)`, resolver batch
+- Mantener estructura de retorno `$result[$id] = $photo`
+
+**Files to Modify**:
+```
+src/Orchestrator/Chain/EditorialOrchestrator.php
+tests/Orchestrator/Chain/EditorialOrchestratorTest.php
+```
+
+**TDD Approach**:
+1. **RED**: Test que `findPhotoById` se llama con `self::ASYNC`
+2. **GREEN**: Acumular promises
+3. **RED**: Test que `fulfilledPhotos()` filtra correctamente
+4. **GREEN**: Implementar callback + settle
+5. **REFACTOR**: Simplificar `retrievePhotosFromBodyTags()` y `addPhotoToArray()`
+
+**Acceptance Criteria**:
+- [ ] Photos se resuelven via batch async
+- [ ] Fotos de `BodyTagPicture` y `BodyTagMembershipCard` incluidas
+- [ ] Photo fallida no rompe la respuesta
+- [ ] Resultado compatible con `bodyDataTransformer->execute()`
+
+**Done When**: Tests verdes, photos en batch.
+
+---
+
+## Phase C: Tags Insertadas/Recomendadas
+
+### BE-006: Recuperar tags de insertadas y recomendadas
 
 **Priority**: MEDIUM
 **Methodology**: TDD
 **Max Iterations**: 7
 
 **Requirements**:
-- En los loops de insertadas (L124-161) y recomendadas (L163-207), extraer tags de cada editorial y hacer `collector->addTag()`
+- En los loops de insertadas y recomendadas (post-resolve de BE-001), extraer tags de cada editorial y acumular promises con `findTagById($tagId, self::ASYNC)`
 - Los tags resueltos se incluyen en `resolveData['insertedNews'][$id]` y `resolveData['recommendedEditorials'][$id]`
-- Los transformers correspondientes deben recibir y usar estos tags
+- Evaluar si los transformers necesitan adaptacion para recibir tags
 
 **Files to Modify**:
 ```
@@ -281,22 +256,21 @@ src/Orchestrator/Chain/EditorialOrchestrator.php
 tests/Orchestrator/Chain/EditorialOrchestratorTest.php
 ```
 
-**Evaluacion previa**: Verificar que `RecommendedEditorialsDataTransformer` e `InsertedNewsDataTransformer` (via `BodyDataTransformer`) aceptan tags. Si no, ajustar transformers.
+**Evaluacion previa**: Verificar que `RecommendedEditorialsDataTransformer` y `BodyDataTransformer` aceptan tags de insertadas/recomendadas. Si no, adaptar.
 
 **TDD Approach**:
-1. **RED**: Test que verifica addTag se llama con tags de insertadas
-2. **GREEN**: Extraer tags de cada editorial insertada y acumular
+1. **RED**: Test que tags de insertadas se acumulan como promises
+2. **GREEN**: Extraer tags de cada editorial insertada visible
 3. **RED**: Test que tags de recomendadas se acumulan
-4. **GREEN**: Extraer tags de cada editorial recomendada
+4. **GREEN**: Extraer tags de cada editorial recomendada visible
 5. **RED**: Test que tags resueltos aparecen en resolveData
-6. **GREEN**: Incluir tags en resolveData por editorial
+6. **GREEN**: Incluir tags en resolveData
 7. **REFACTOR**: Clean up
 
 **Acceptance Criteria**:
-- [ ] Tags de insertadas se recuperan
-- [ ] Tags de recomendadas se recuperan
+- [ ] Tags de insertadas se recuperan y acumulan
+- [ ] Tags de recomendadas se recuperan y acumulan
 - [ ] Tags incluidos en resolveData
-- [ ] Transformers reciben tags (o se adaptan)
 - [ ] No rompe respuesta existente (backward compatible)
 
 **Done When**: Tests verdes, tags presentes en respuesta.
@@ -306,18 +280,21 @@ tests/Orchestrator/Chain/EditorialOrchestratorTest.php
 ## Orden de Ejecucion
 
 ```
-BE-001 → BE-002 → BE-003 → BE-004 → BE-005 → BE-006 → BE-007 → BE-008
-  │         │         │         │
-  └─────────┴─────────┘         │
-   (Collector completo)         │
-                                └── (Refactor incremental del orchestrator)
+BE-001 (batch editorials) → BE-004 (batch sections, depende de editorial IDs)
+                           → BE-003 (batch journalists, depende de editorial signatures)
+                           → BE-006 (tags insertadas/recomendadas, depende de editorial tags)
+
+BE-002 (batch tags principal) - independiente
+BE-005 (batch photos) - independiente
+
+Paralelizables: BE-002 y BE-005 pueden hacerse en paralelo con BE-001
 ```
 
 **Checkpoints**:
-1. Despues de BE-003: `make test_unit && make test_container && make test_stan`
-2. Despues de BE-005: `make test_unit` (primera integracion collector-orchestrator)
-3. Despues de BE-007: `make tests` (full suite, todo batch)
-4. Despues de BE-008: `make tests` (full suite, datos nuevos)
+1. Despues de BE-001: `./bin/phpunit tests/Orchestrator/Chain/EditorialOrchestratorTest.php`
+2. Despues de BE-002 + BE-005: `make test_unit`
+3. Despues de BE-003 + BE-004: `make test_unit && make test_stan`
+4. Despues de BE-006: `make tests` (full suite)
 
 ---
 

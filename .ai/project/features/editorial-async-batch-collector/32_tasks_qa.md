@@ -4,6 +4,7 @@
 > **Document**: 32_tasks_qa.md
 > **Role**: QA Engineer
 > **Created**: 2026-02-10
+> **Updated**: 2026-02-10
 
 ---
 
@@ -11,68 +12,22 @@
 
 | Phase | Tasks | Priority | Effort |
 |-------|-------|----------|--------|
-| A. BatchRequestCollector Tests | QA-001 to QA-002 | HIGH | Medium |
-| B. EditorialOrchestrator Regression | QA-003 to QA-005 | HIGH | High |
-| C. Quality Gates | QA-006 | HIGH | Low |
+| A. Regression | QA-001 | HIGH | Medium |
+| B. Async Behavior | QA-002 to QA-003 | HIGH | High |
+| C. Quality Gates | QA-004 | HIGH | Low |
 
 ---
 
-## Phase A: BatchRequestCollector Tests
+## Phase A: Regression
 
-### QA-001: Unit Tests BatchRequestCollector
-
-**Priority**: HIGH
-**Reference**: `30_tasks_backend.md` BE-002
-**Max Iterations**: 7
-
-**Test Scenarios (DataProvider)**:
-
-| Scenario | Input | Expected |
-|----------|-------|----------|
-| No IDs added | `resolveTags()` sin `addTag()` | `[]` |
-| Single ID | `addTag('1')` | `['1' => Tag]` |
-| Multiple IDs | `addTag('1'), addTag('2')` | `['1' => Tag, '2' => Tag]` |
-| Duplicate IDs | `addTag('1'), addTag('1')` | 1 sola llamada HTTP, `['1' => Tag]` |
-| Failed ID | Mock throws exception | `[]`, logger called |
-| Mixed success/fail | `addTag('1'), addTag('bad')` | `['1' => Tag]`, logger called for 'bad' |
-
-**Repetir para**: `resolveJournalists()`, `resolveSections()`, `resolvePhotos()`
-
-**Verification**:
-```bash
-./bin/phpunit tests/Infrastructure/Http/BatchRequestCollectorTest.php
-```
-
-**Done When**: 100% cobertura del collector, todos los escenarios cubiertos.
-
----
-
-### QA-002: Integration Smoke Test
-
-**Priority**: MEDIUM
-**Max Iterations**: 5
-
-**Test**:
-- Verificar que `BatchRequestCollector` se resuelve correctamente del container Symfony
-- Verificar que las dependencias (clients, logger) se inyectan
-
-**Verification**:
-```bash
-make test_container
-```
-
-**Done When**: Container compila con el nuevo servicio.
-
----
-
-## Phase B: EditorialOrchestrator Regression
-
-### QA-003: Tests Existentes Sin Regresion
+### QA-001: Tests Existentes Sin Regresion
 
 **Priority**: HIGH
 **Max Iterations**: 5
 
-**Objetivo**: Todos los tests existentes en `EditorialOrchestratorTest.php` pasan despues del refactor.
+**Objetivo**: Todos los tests existentes en `EditorialOrchestratorTest.php` pasan despues de cada tarea BE-*.
+
+**Verificacion continua**: Ejecutar despues de cada BE-* completada.
 
 **Verification**:
 ```bash
@@ -83,31 +38,43 @@ make test_container
 
 ---
 
-### QA-004: Tests Nuevos - Batch Behavior
+## Phase B: Async Behavior
+
+### QA-002: Tests de Batch Behavior
 
 **Priority**: HIGH
 **Max Iterations**: 10
 
-**Test Scenarios**:
+**Test Scenarios (DataProvider)**:
 
 | Scenario | Verificacion |
 |----------|-------------|
-| Tags via collector | `collector->addTag()` llamado N veces, `resolveTags()` 1 vez |
-| Journalists via collector | `collector->addJournalist()` llamado para insertadas + recomendadas + principal |
-| Sections via collector | `collector->addSection()` llamado para insertadas + recomendadas |
-| Photos via collector | `collector->addPhoto()` llamado para body tag pictures + membership cards |
-| Dedup cross-editorial | Un tag compartido por principal + insertada solo genera 1 call |
-| Fallo parcial tags | 1 tag falla, resto se resuelve normalmente |
-| Fallo parcial journalists | 1 journalist falla, firma se omite |
-| Editorial sin insertadas | No se llama addTag/addJournalist/addSection para insertadas |
-| Editorial sin recomendadas | No se llama addTag/addJournalist/addSection para recomendadas |
-| Editorial sin tags | No se llama addTag |
+| Tags via async | `findTagById` llamado con `self::ASYNC`, promises acumuladas, settle resuelve |
+| Tags dedup | Un tag compartido por principal + insertada = 1 sola promise |
+| Tags fallo parcial | 1 tag falla, resto se resuelve normalmente |
+| Journalists via async | `findJournalistByAliasId` con `self::ASYNC` para insertadas + recomendadas + principal |
+| Journalists dedup | Mismo journalist en 2 editorials = 1 promise |
+| Journalists fallo parcial | 1 journalist falla, firma se omite, rest OK |
+| Sections via async | `findSectionById` con `self::ASYNC` para insertadas + recomendadas |
+| Sections dedup | Misma section en 2 editorials = 1 promise |
+| Photos via async | `findPhotoById` con `self::ASYNC` para body tags |
+| Photos fallo parcial | 1 photo falla, rest OK |
+| Editorials insertadas via async | `findEditorialById` con `self::ASYNC` para insertadas |
+| Editorials recomendadas via async | `findEditorialById` con `self::ASYNC` para recomendadas |
+| Editorial no visible post-settle | Editorial insertada con `isVisible()=false` se excluye |
+| Editorial sin insertadas | No se llama findEditorialById async para insertadas |
+| Editorial sin recomendadas | No se llama findEditorialById async para recomendadas |
+| Editorial sin tags | No se llama findTagById |
+| `fulfilledTags()` filtra | Solo Promise::FULFILLED incluidas en resultado |
+| `fulfilledJournalists()` filtra | Solo Promise::FULFILLED incluidas |
+| `fulfilledSections()` filtra | Solo Promise::FULFILLED incluidas |
+| `fulfilledPhotos()` filtra | Solo Promise::FULFILLED incluidas |
 
-**Done When**: Todos los scenarios cubiertos con tests parametrizados.
+**Done When**: Todos los escenarios cubiertos con tests parametrizados.
 
 ---
 
-### QA-005: Tests Nuevos - Tags Insertadas/Recomendadas
+### QA-003: Tests Tags Insertadas/Recomendadas (Datos Nuevos)
 
 **Priority**: MEDIUM
 **Max Iterations**: 7
@@ -116,18 +83,19 @@ make test_container
 
 | Scenario | Input | Expected |
 |----------|-------|----------|
-| Insertada con 2 tags | Editorial insertada con tags | `resolveData['insertedNews'][$id]` contiene tags |
-| Recomendada con 3 tags | Editorial recomendada con tags | `resolveData['recommendedEditorials'][$id]` contiene tags |
-| Tags compartidos entre principal e insertada | Tag ID '5' en ambos | Solo 1 HTTP call (dedup) |
+| Insertada con 2 tags | Editorial insertada con tags | Tags acumulados y resueltos |
+| Recomendada con 3 tags | Editorial recomendada con tags | Tags acumulados y resueltos |
+| Tags compartidos principal + insertada | Tag ID '5' en ambos | 1 sola promise (dedup) |
 | Insertada sin tags | Editorial sin tags | No falla, tags = [] |
+| Recomendada no visible | Editorial con isVisible=false | No se acumulan sus tags |
 
-**Done When**: Tags de insertadas y recomendadas verificados en respuesta.
+**Done When**: Tags de insertadas y recomendadas verificados.
 
 ---
 
 ## Phase C: Quality Gates
 
-### QA-006: Full Quality Suite
+### QA-004: Full Quality Suite
 
 **Priority**: HIGH
 **Max Iterations**: 3
@@ -146,7 +114,7 @@ make tests
 
 **Done When**: `make tests` pasa completamente.
 
-**Escape Hatch**: Si MSI baja por debajo de 79% debido a nuevos mutantes en el collector, añadir tests especificos para cubrir los mutantes escapados.
+**Escape Hatch**: Si MSI baja por debajo de 79%, añadir tests especificos para cubrir mutantes escapados en los nuevos callbacks `fulfilled*()`.
 
 ---
 

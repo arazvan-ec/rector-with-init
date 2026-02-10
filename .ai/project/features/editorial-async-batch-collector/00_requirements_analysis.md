@@ -50,12 +50,12 @@ TOTAL: ~42 HTTP calls sync + ~10 promises async = ~4.2s I/O
 | QueryMultimediaClient | `ec/multimedia-client` | - | **SI** | `$async` boolean flag | vendor |
 | QueryLegacyClient | local | - | **SI** | `$async` boolean flag | `src/Ec/Snaapi/Infrastructure/Client/Http/` |
 | QueryMembershipClient | `ec/membership-client` | - | **SI** | Returns Promise | vendor |
-| QueryEditorialClient | `ec/editorial-client` | - | **NO** | Sync only | vendor |
-| QuerySectionClient | `ec/section-client` | ^3.0 | **NO** | Sync only | vendor |
-| QueryTagClient | `ec/tag-client` | ^4.0 | **NO** | Sync only | vendor |
-| QueryJournalistClient | `ec/journalist-client` | ^5.2.2 | **NO** | Sync only | vendor |
+| QueryEditorialClient | `ec/editorial-client` | - | **SI** | `$async` boolean flag | vendor |
+| QuerySectionClient | `ec/section-client` | ^3.0 | **SI** | `$async` boolean flag | vendor |
+| QueryTagClient | `ec/tag-client` | ^4.0 | **SI** | `$async` boolean flag | vendor |
+| QueryJournalistClient | `ec/journalist-client` | ^5.2.2 | **SI** | `$async` boolean flag | vendor |
 
-**Infraestructura comun**: Todos usan HTTPLug con Guzzle7 async client (`httplug.client.app_guzzle7.http_methods.inner`). La capa HTTP subyacente soporta async, pero los wrappers `ec/*` no exponen esta capacidad.
+**Infraestructura comun**: Todos usan HTTPLug con Guzzle7 async client (`httplug.client.app_guzzle7.http_methods.inner`). Todos los clients soportan el patron `$async` boolean flag: cuando `$async = true`, devuelven `Promise` en vez de resolver sincrono.
 
 ### 1.3 Patron Async Existente
 
@@ -95,8 +95,8 @@ Actualmente NO se recuperan:
 
 ## 2. Requisitos Funcionales
 
-### RF-01: Request Collector
-Servicio inyectable que acumula IDs por bounded context durante el recorrido del editorial y sus hijos. Metodos para registrar IDs y metodo `resolveAll()` que lanza todas las promises en paralelo.
+### RF-01: Acumulacion y Resolucion Async
+Acumular promises de cada bounded context usando directamente los clients con `$async = true`, y resolver en batch con `Utils::settle()`.
 
 ### RF-02: Deduplicacion de IDs
 Un mismo tag/journalist/section puede aparecer en editorial principal + insertadas + recomendadas. El collector deduplica antes de lanzar peticiones HTTP.
@@ -128,34 +128,35 @@ La respuesta API v1 mantiene la misma estructura JSON. Los datos nuevos (tags de
 - PSR-12 + Symfony coding standards
 
 ### RNF-03: Principios SOLID
-- **S**: El collector tiene una unica responsabilidad (acumular y resolver)
-- **O**: Extensible para nuevos bounded contexts sin modificar el collector
-- **L**: Si se crean decorators, deben ser sustituibles por los clients originales
+- **S**: El orchestrator orquesta, los clients resuelven HTTP
+- **O**: Extensible para nuevos bounded contexts
 - **I**: Interfaces pequeñas y focalizadas
 - **D**: Depender de abstracciones (interfaces de clients, no implementaciones)
 
 ---
 
-## 4. Restriccion Critica: Clients `ec/*` sin Async
+## 4. Patron Async Uniforme
 
-### Problema
-Los paquetes `ec/tag-client`, `ec/journalist-client`, `ec/section-client` y `ec/editorial-client` NO exponen `$async` flag. Son paquetes externos (GitLab `ec-awesomemakers1`) que no podemos modificar directamente.
+### Premisa
+Todos los clients `ec/*` soportan (o soportaran) el patron `$async` boolean flag. Esto significa que podemos usar directamente:
 
-### Opciones Evaluadas
+```php
+$promise = $this->queryTagClient->findTagById($id, self::ASYNC);       // Promise
+$promise = $this->queryJournalistClient->findJournalistByAliasId($aliasId, self::ASYNC); // Promise
+$promise = $this->querySectionClient->findSectionById($id, self::ASYNC); // Promise
+```
 
-| Opcion | Descripcion | Pros | Contras |
-|--------|-------------|------|---------|
-| **A: Decorator** | Crear decorator por client que añade `$async` | Patron conocido, no modifica vendor | 4 decorators nuevos, duplica interfaz |
-| **B: Async Wrapper generico** | Un wrapper que hace sendAsync directamente via HTTPLug | Una sola clase, maximo reuso | Hay que replicar la logica de deserializacion de cada client |
-| **C: Fork de packages** | Fork `ec/*` y añadir `$async` en origen | Solucion limpia, un solo cambio | Requiere mantener forks, approval de equipo |
-| **D: Collector con sendAsync directo** | El RequestCollector lanza HTTP async raw y deserializa | Maximo control, sin decorators | Acopla al collector con detalles HTTP de cada client |
+Y resolver con el patron ya existente:
+```php
+$results = Utils::settle($promises)->wait(self::UNWRAPPED);
+```
 
-### Recomendacion: Evaluar en 10_architecture.md
-
-La decision depende de factores que hay que investigar en la fase de arquitectura:
-- Si los clients `ec/*` usan un patron comun de deserializacion que se pueda abstraer
-- Si el equipo esta dispuesto a mantener forks
-- Si la opcion Decorator no genera demasiada ceremonia
+### Implicacion
+No se necesitan decorators, wrappers, ni un BatchRequestCollector intermedio. El refactor se simplifica a:
+1. Cambiar llamadas sync por `$client->method($id, self::ASYNC)` para obtener Promise
+2. Acumular promises en arrays por contexto
+3. Resolver con `Utils::settle()` + callback que filtra `Promise::FULFILLED`
+4. Deduplicar IDs antes de lanzar promises (optimizacion)
 
 ---
 
