@@ -14,6 +14,7 @@ use App\Application\DataTransformer\Apps\RecommendedEditorialsDataTransformer;
 use App\Application\DataTransformer\Apps\StandfirstDataTransformer;
 use App\Application\DataTransformer\BodyDataTransformer;
 use App\Ec\Snaapi\Infrastructure\Client\Http\QueryLegacyClient;
+use App\Infrastructure\Async\AsyncBatchCollectorInterface;
 use App\Exception\EditorialNotPublishedYetException;
 use App\Infrastructure\Enum\SitesEnum;
 use App\Infrastructure\Trait\MultimediaTrait;
@@ -85,6 +86,7 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
         private readonly QueryMultimediaOpeningClient $queryMultimediaOpeningClient,
         private readonly MediaDataTransformerHandler $mediaDataTransformerHandler,
         private readonly MultimediaOrchestratorHandler $multimediaTypeOrchestratorHandler,
+        private readonly AsyncBatchCollectorInterface $asyncBatchCollector,
         string $extension,
     ) {
         $this->setExtension($extension);
@@ -206,10 +208,43 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
             }
         }
 
-        /** @var array<string, ?array{multimedia: array<string, array<int, Promise>>}> $resolveData */
-        $resolveData = $this->getOpening($editorial, $resolveData);
         /** @var array{multimedia?: array<string, array<int, Promise>>} $resolveData */
         $resolveData = $this->getAsyncMultimedia($editorial->multimedia(), $resolveData); // @phpstan-ignore argument.type
+
+        $this->accumulateOpening($editorial);
+        $this->accumulateComments($id);
+
+        $editorialTags = $editorial->tags()->getArrayCopy();
+        foreach ($editorialTags as $tag) {
+            $tagId = $tag->id();
+            $this->asyncBatchCollector->add(
+                'principal',
+                'tag_' . $tagId,
+                fn () => $this->queryTagClient->findTagById($tagId, self::ASYNC),
+            );
+        }
+
+        $editorialSignatures = $editorial->signatures()->getArrayCopy();
+        $hasTwitter = \in_array($editorial->editorialType(), self::TWITTER_TYPES);
+        foreach ($editorialSignatures as $signature) {
+            $aliasId = $signature->id()->id();
+            $aliasIdModel = $this->journalistFactory->buildAliasId($aliasId);
+            $this->asyncBatchCollector->add(
+                'principal',
+                'journalist_' . $aliasId,
+                fn () => $this->queryJournalistClient->findJournalistByAliasId($aliasIdModel, self::ASYNC),
+            );
+        }
+
+        $body = $editorial->body();
+        /** @var BodyTagPicture[] $bodyTagPictures */
+        $bodyTagPictures = $body->bodyElementsOf(BodyTagPicture::class);
+        /** @var BodyTagMembershipCard[] $bodyTagMembershipCards */
+        $bodyTagMembershipCards = $body->bodyElementsOf(BodyTagMembershipCard::class);
+        $this->accumulatePhotos($bodyTagPictures, $bodyTagMembershipCards);
+
+        $this->asyncBatchCollector->settle('principal');
+
         if (!empty($resolveData['multimedia'])
             && !($editorial->multimedia() instanceof Widget)
         ) {
@@ -217,15 +252,17 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
                 ->then($this->createCallback([$this, 'fulfilledMultimedia']))
                 ->wait(self::UNWRAPPED);
         }
-        $resolveData['photoFromBodyTags'] = $this->retrievePhotosFromBodyTags($editorial->body());
+
+        $resolveData['multimediaOpening'] = $this->resolveOpeningMultimedia();
+        $resolveData['photoFromBodyTags'] = $this->resolvePhotos($bodyTagPictures, $bodyTagMembershipCards);
 
         $tags = [];
-        foreach ($editorial->tags()->getArrayCopy() as $tag) {
-            try {
-                /** @var Tag[] $tags */
-                $tags[] = $this->queryTagClient->findTagById($tag->id());
-            } catch (\Throwable $exception) {
-                continue;
+        foreach ($editorialTags as $tag) {
+            $tagId = $tag->id();
+            if ($this->asyncBatchCollector->has('principal', 'tag_' . $tagId)) {
+                /** @var Tag $resolvedTag */
+                $resolvedTag = $this->asyncBatchCollector->get('principal', 'tag_' . $tagId);
+                $tags[] = $resolvedTag;
             }
         }
 
@@ -235,20 +272,18 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
             $tags
         )->read();
 
-        /** @var array{options: array{totalrecords?:int}} $comments */
-        $comments = $this->queryLegacyClient->findCommentsByEditorialId($id);
-        $editorialResult['countComments'] = $comments['options']['totalrecords'] ?? 0;
-        $editorialResult['signatures'] = [];
+        $editorialResult['countComments'] = $this->resolveComments();
 
-        foreach ($editorial->signatures()->getArrayCopy() as $signature) {
-            $hasTwitter = \in_array($editorial->editorialType(), self::TWITTER_TYPES);
-            $result = $this->retrieveAliasFormat(
-                $signature->id()->id(),
-                $section,
-                $hasTwitter
-            );
-            if (!empty($result)) {
-                $editorialResult['signatures'][] = $result;
+        $editorialResult['signatures'] = [];
+        foreach ($editorialSignatures as $signature) {
+            $aliasId = $signature->id()->id();
+            if ($this->asyncBatchCollector->has('principal', 'journalist_' . $aliasId)) {
+                /** @var Journalist $journalist */
+                $journalist = $this->asyncBatchCollector->get('principal', 'journalist_' . $aliasId);
+                $result = $this->journalistsDataTransformer->write($aliasId, $journalist, $section, $hasTwitter)->read();
+                if (!empty($result)) {
+                    $editorialResult['signatures'][] = $result;
+                }
             }
         }
 
@@ -300,43 +335,110 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
         return 'editorial';
     }
 
-    /**
-     * @return array<mixed>
-     */
-    private function retrievePhotosFromBodyTags(Body $body): array
+    private function accumulateOpening(NewsBase $editorial): void
     {
-        $result = [];
-        /** @var BodyTagPicture[] $arrayOfBodyTagPicture */
-        $arrayOfBodyTagPicture = $body->bodyElementsOf(BodyTagPicture::class);
-        foreach ($arrayOfBodyTagPicture as $bodyTagPicture) {
-            $result = $this->addPhotoToArray($bodyTagPicture->id()->id(), $result);
+        $opening = $editorial->opening();
+        if (!empty($opening->multimediaId())) {
+            $openingMultimediaId = $opening->multimediaId();
+            $this->asyncBatchCollector->add(
+                'principal',
+                'opening_multimedia',
+                fn () => $this->queryMultimediaOpeningClient->findMultimediaById($openingMultimediaId, self::ASYNC),
+            );
+        }
+    }
+
+    private function accumulateComments(string $editorialId): void
+    {
+        $this->asyncBatchCollector->add(
+            'principal',
+            'comments',
+            fn () => $this->queryLegacyClient->findCommentsByEditorialId($editorialId, self::ASYNC),
+        );
+    }
+
+    /**
+     * @param BodyTagPicture[]        $bodyTagPictures
+     * @param BodyTagMembershipCard[] $bodyTagMembershipCards
+     */
+    private function accumulatePhotos(array $bodyTagPictures, array $bodyTagMembershipCards): void
+    {
+        foreach ($bodyTagPictures as $bodyTagPicture) {
+            $photoId = $bodyTagPicture->id()->id();
+            $this->asyncBatchCollector->add(
+                'principal',
+                'photo_' . $photoId,
+                fn () => $this->queryMultimediaClient->findPhotoById($photoId, self::ASYNC),
+            );
         }
 
-        /** @var BodyTagMembershipCard[] $arrayOfBodyTagMembershipCard */
-        $arrayOfBodyTagMembershipCard = $body->bodyElementsOf(BodyTagMembershipCard::class);
-        foreach ($arrayOfBodyTagMembershipCard as $bodyTagMembershipCard) {
-            $id = $bodyTagMembershipCard->bodyTagPictureMembership()->id()->id();
-            $result = $this->addPhotoToArray($id, $result);
+        foreach ($bodyTagMembershipCards as $bodyTagMembershipCard) {
+            $photoId = $bodyTagMembershipCard->bodyTagPictureMembership()->id()->id();
+            $this->asyncBatchCollector->add(
+                'principal',
+                'photo_' . $photoId,
+                fn () => $this->queryMultimediaClient->findPhotoById($photoId, self::ASYNC),
+            );
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolveOpeningMultimedia(): array
+    {
+        if (!$this->asyncBatchCollector->has('principal', 'opening_multimedia')) {
+            return [];
+        }
+
+        try {
+            /** @var AbstractMultimedia $multimedia */
+            $multimedia = $this->asyncBatchCollector->get('principal', 'opening_multimedia');
+
+            return $this->multimediaTypeOrchestratorHandler->handler($multimedia);
+        } catch (OrchestratorTypeNotExistException|InvalidBodyException $e) {
+            $this->logger->warning($e->getMessage());
+
+            return [];
+        }
+    }
+
+    /**
+     * @param BodyTagPicture[]        $bodyTagPictures
+     * @param BodyTagMembershipCard[] $bodyTagMembershipCards
+     *
+     * @return array<mixed>
+     */
+    private function resolvePhotos(array $bodyTagPictures, array $bodyTagMembershipCards): array
+    {
+        $result = [];
+        foreach ($bodyTagPictures as $bodyTagPicture) {
+            $photoId = $bodyTagPicture->id()->id();
+            if ($this->asyncBatchCollector->has('principal', 'photo_' . $photoId)) {
+                $result[$photoId] = $this->asyncBatchCollector->get('principal', 'photo_' . $photoId);
+            }
+        }
+
+        foreach ($bodyTagMembershipCards as $bodyTagMembershipCard) {
+            $photoId = $bodyTagMembershipCard->bodyTagPictureMembership()->id()->id();
+            if ($this->asyncBatchCollector->has('principal', 'photo_' . $photoId)) {
+                $result[$photoId] = $this->asyncBatchCollector->get('principal', 'photo_' . $photoId);
+            }
         }
 
         return $result;
     }
 
-    /**
-     * @param array<mixed> $result
-     *
-     * @return array<mixed>
-     */
-    private function addPhotoToArray(string $id, array $result): array
+    private function resolveComments(): int
     {
-        try {
-            $photo = $this->queryMultimediaClient->findPhotoById($id);
-            $result[$id] = $photo;
-        } catch (\Throwable $throwable) {
-            $this->logger->error($throwable->getMessage());
+        if (!$this->asyncBatchCollector->has('principal', 'comments')) {
+            return 0;
         }
 
-        return $result;
+        /** @var array{options: array{totalrecords?:int}} $comments */
+        $comments = $this->asyncBatchCollector->get('principal', 'comments');
+
+        return $comments['options']['totalrecords'] ?? 0;
     }
 
     /**
@@ -429,28 +531,6 @@ class EditorialOrchestrator implements EditorialOrchestratorInterface
 
         if (null !== $multimediaId) {
             $resolveData['multimedia'][] = $this->queryMultimediaClient->findMultimediaById($multimediaId, self::ASYNC);
-        }
-
-        return $resolveData; // @phpstan-ignore return.type
-    }
-
-    /**
-     * @param array<string, array<int|string, array<int|string, mixed>|AbstractMultimedia|Promise>> $resolveData
-     *
-     * @return array<string, array<int, Promise|AbstractMultimedia>>
-     */
-    private function getOpening(Editorial $editorial, array $resolveData): array
-    {
-        /** @var NewsBase $editorial */
-        $opening = $editorial->opening();
-        if (!empty($opening->multimediaId())) {
-            try {
-                /** @var AbstractMultimedia $multimedia */
-                $multimedia = $this->queryMultimediaOpeningClient->findMultimediaById($opening->multimediaId());
-                $resolveData['multimediaOpening'] = $this->multimediaTypeOrchestratorHandler->handler($multimedia);
-            } catch (OrchestratorTypeNotExistException|InvalidBodyException $e) {
-                $this->logger->warning($e->getMessage());
-            }
         }
 
         return $resolveData; // @phpstan-ignore return.type

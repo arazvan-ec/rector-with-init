@@ -15,6 +15,7 @@ use App\Application\DataTransformer\Apps\StandfirstDataTransformer;
 use App\Application\DataTransformer\BodyDataTransformer;
 use App\Ec\Snaapi\Infrastructure\Client\Http\QueryLegacyClient;
 use App\Exception\EditorialNotPublishedYetException;
+use App\Infrastructure\Async\AsyncBatchCollector;
 use App\Orchestrator\Chain\EditorialOrchestrator;
 use App\Orchestrator\Chain\Multimedia\MultimediaOrchestratorHandler;
 use App\Orchestrator\Exceptions\OrchestratorTypeNotExistException;
@@ -57,6 +58,7 @@ use Ec\Section\Domain\Model\Section;
 use Ec\Section\Domain\Model\SectionId;
 use Ec\Tag\Domain\Model\QueryTagClient;
 use Ec\Tag\Domain\Model\Tag as TagAlias;
+use GuzzleHttp\Promise\FulfilledPromise as GuzzleFulfilledPromise;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -184,6 +186,7 @@ class EditorialOrchestratorTest extends TestCase
             $this->queryMultimediaOpeningClient,
             $this->mediaDataTransformerHandler,
             $this->multimediaOrchestratorHandler,
+            new AsyncBatchCollector($this->logger),
             'dev'
         );
     }
@@ -211,7 +214,8 @@ class EditorialOrchestratorTest extends TestCase
             $this->standfirstDataTransformer,
             $this->recommendedEditorialsDataTransformer,
             $this->queryMultimediaOpeningClient,
-            $this->multimediaMediaDataTransformer,
+            $this->mediaDataTransformerHandler,
+            $this->multimediaOrchestratorHandler,
         );
     }
 
@@ -444,8 +448,8 @@ class EditorialOrchestratorTest extends TestCase
         $this->queryLegacyClient
             ->expects($this->once())
             ->method('findCommentsByEditorialId')
-            ->with($editorial['id'])
-            ->willReturn(['options' => ['totalrecords' => 0]]);
+            ->with($editorial['id'], true)
+            ->willReturn(new GuzzleFulfilledPromise(['options' => ['totalrecords' => 0]]));
 
         $editorialMock = $this->getSignaturesMockByEditorial($editorial, $editorialMock);
 
@@ -631,10 +635,12 @@ class EditorialOrchestratorTest extends TestCase
         $invokedCount = static::exactly(\count($promisesJournalist));
         $this->queryJournalistClient->expects($invokedCount)
             ->method('findJournalistByAliasId')
-             ->willReturnCallback(function ($aliasId) use ($promisesJournalist, $withConsecutiveArgs, $invokedCount) {
+             ->willReturnCallback(function ($aliasId, bool $async = false) use ($promisesJournalist, $withConsecutiveArgs, $invokedCount) {
                  static::assertEquals($withConsecutiveArgs[$invokedCount->numberOfInvocations() - 1][0], $aliasId);
 
-                 return $promisesJournalist[$invokedCount->numberOfInvocations() - 1];
+                 $journalist = $promisesJournalist[$invokedCount->numberOfInvocations() - 1];
+
+                 return $async ? new GuzzleFulfilledPromise($journalist) : $journalist;
              });
     }
 
@@ -685,8 +691,8 @@ class EditorialOrchestratorTest extends TestCase
         $this->queryTagClient
             ->expects($this->once())
             ->method('findTagById')
-            ->with($editorialTag->id()->id())
-            ->willReturn($tag);
+            ->with($editorialTag->id()->id(), true)
+            ->willReturn(new GuzzleFulfilledPromise($tag));
 
         return $tag;
     }
@@ -1171,95 +1177,6 @@ class EditorialOrchestratorTest extends TestCase
         return [$promisesJournalist, $withAlias];
     }
 
-    #[Test]
-    public function shouldGetOpeningWithOpeningAndResourceWhenIsTypeMultimediaPhoto(): void
-    {
-        $editorial = $this->createMock(NewsBase::class);
-        $opening = $this->createMock(Opening::class);
-        $opening->method('multimediaId')->willReturn('123');
-        $editorial->method('opening')->willReturn($opening);
-
-        $resourceIdMock = $this->createMock(ResourceId::class);
-        $resourceIdMock->method('id')->willReturn('456');
-        $multimedia = $this->createMock(MultimediaPhoto::class);
-        $multimedia->method('resourceId')->willReturn($resourceIdMock);
-
-        $photoMock = $this->createMock(Photo::class);
-
-        $this->queryMultimediaOpeningClient
-            ->method('findMultimediaById')
-            ->with('123')
-            ->willReturn($multimedia);
-
-        $this->multimediaOrchestratorHandler
-            ->expects(static::once())
-            ->method('handler')
-            ->with($multimedia)
-            ->willReturn(['123' => [
-                'opening' => $multimedia,
-                'resource' => $photoMock,
-            ]]);
-
-        $resolveData = [];
-        $reflection = new \ReflectionClass($this->editorialOrchestrator);
-
-        $method = $reflection->getMethod('getOpening');
-        $method->setAccessible(true);
-        /** @var array{
-         *      multimediaOpening?: array{123?: array{opening: MultimediaPhoto, resource: Photo}}
-         * } $result
-         */
-        $result = $method->invokeArgs($this->editorialOrchestrator, [$editorial, $resolveData]);
-
-        $this->assertArrayHasKey('multimediaOpening', $result);
-        $this->assertArrayHasKey('123', $result['multimediaOpening']);
-        $this->assertSame($multimedia, $result['multimediaOpening']['123']['opening']);
-        $this->assertSame($photoMock, $result['multimediaOpening']['123']['resource']);
-    }
-
-    #[Test]
-    public function shouldGetOpeningWithOpeningAndWithoutResourceWhenIsNotTypeMultimediaPhoto(): void
-    {
-        $editorial = $this->createMock(NewsBase::class);
-        $opening = $this->createMock(Opening::class);
-        $opening->expects(static::exactly(2))
-            ->method('multimediaId')
-            ->willReturn('123');
-        $editorial
-            ->expects(static::once())
-            ->method('opening')
-            ->willReturn($opening);
-
-        $multimedia = $this->createMock(Multimedia\MultimediaEmbedVideo::class);
-
-        $this->queryMultimediaOpeningClient
-            ->expects(static::once())
-            ->method('findMultimediaById')
-            ->with('123')
-            ->willReturn($multimedia);
-
-        $this->multimediaOrchestratorHandler
-            ->expects(static::once())
-            ->method('handler')
-            ->with($multimedia)
-            ->willReturn(['123' => [
-                'opening' => $multimedia,
-            ]]);
-
-        $resolveData = [];
-        $reflection = new \ReflectionClass($this->editorialOrchestrator);
-
-        $method = $reflection->getMethod('getOpening');
-
-        /** @var array{
-         *      multimediaOpening?: array{123?: array{opening: Multimedia\MultimediaEmbedVideo}}
-         * } $result
-         */
-        $result = $method->invokeArgs($this->editorialOrchestrator, [$editorial, $resolveData]);
-        $this->assertArrayHasKey('multimediaOpening', $result);
-        $this->assertArrayHasKey('123', $result['multimediaOpening']);
-        $this->assertSame($multimedia, $result['multimediaOpening']['123']['opening']);
-    }
 
     #[Test]
     public function shouldReturnOnlyFulfilledMultimedia(): void
@@ -1375,51 +1292,6 @@ class EditorialOrchestratorTest extends TestCase
         static::assertEquals(['result' => 'data'], $result);
     }
 
-    #[Test]
-    public function addPhotoToArrayShouldFullfilledArray(): void
-    {
-        $id = 'photoId';
-        $photo = $this->createMock(Photo::class);
-
-        $this->queryMultimediaClient->expects($this->once())
-            ->method('findPhotoById')
-            ->with($id)
-            ->willReturn($photo);
-
-        $reflection = new \ReflectionMethod($this->editorialOrchestrator, 'addPhotoToArray');
-        $reflection->setAccessible(true);
-
-        $inputArray = [];
-        /** @var array<string, Photo> $result */
-        $result = $reflection->invoke($this->editorialOrchestrator, $id, $inputArray);
-
-        $this->assertArrayHasKey($id, $result);
-        $this->assertSame($photo, $result[$id]);
-    }
-
-    #[Test]
-    public function addPhotoToArrayShouldThrowException(): void
-    {
-        $id = 'photoId';
-        $exceptionMessage = 'Some error';
-
-        $this->queryMultimediaClient->expects($this->once())
-            ->method('findPhotoById')
-            ->with($id)
-            ->willThrowException(new \Exception($exceptionMessage));
-
-        $this->logger->expects($this->once())
-            ->method('error')
-            ->with($exceptionMessage);
-
-        $reflection = new \ReflectionMethod($this->editorialOrchestrator, 'addPhotoToArray');
-        $reflection->setAccessible(true);
-
-        $inputArray = [];
-        $result = $reflection->invoke($this->editorialOrchestrator, $id, $inputArray);
-
-        $this->assertSame($inputArray, $result);
-    }
 
     #[Test]
     public function getMultimediaShouldRequestViaAsync(): void
@@ -1623,7 +1495,9 @@ class EditorialOrchestratorTest extends TestCase
         $this->recommendedEditorialsDataTransformer->method('write')->willReturnSelf();
         $this->recommendedEditorialsDataTransformer->method('read')->willReturn([]);
 
-        $this->queryLegacyClient->method('findCommentsByEditorialId')->willReturn(['options' => ['totalrecords' => 0]]);
+        $this->queryLegacyClient->method('findCommentsByEditorialId')
+            ->with($mainEditorialId, true)
+            ->willReturn(new GuzzleFulfilledPromise(['options' => ['totalrecords' => 0]]));
 
         $this->logger->expects(static::once())
             ->method('error')
@@ -1655,46 +1529,4 @@ class EditorialOrchestratorTest extends TestCase
         static::assertSame([], $result);
     }
 
-    #[Test]
-    public function getOpeningLogsWarningWhenOrchestratorTypeNotExist(): void
-    {
-        $editorialId = '123';
-        $multimediaId = 'multimedia-456';
-        $multimediaType = 'unsupported-type';
-
-        $opening = $this->createMock(Opening::class);
-        $opening->method('multimediaId')->willReturn($multimediaId);
-
-        $editorial = $this->createMock(NewsBase::class);
-        $editorial->method('opening')->willReturn($opening);
-
-        $multimedia = $this->createMock(Multimedia\Multimedia::class);
-        $multimedia->method('type')->willReturn($multimediaType);
-
-        $this->queryMultimediaOpeningClient
-            ->expects(static::once())
-            ->method('findMultimediaById')
-            ->with($multimediaId)
-            ->willReturn($multimedia);
-
-        $this->multimediaOrchestratorHandler
-            ->expects(static::once())
-            ->method('handler')
-            ->with($multimedia)
-            ->willThrowException(new OrchestratorTypeNotExistException());
-
-        $this->logger
-            ->expects(static::once())
-            ->method('warning');
-
-        $reflection = new \ReflectionClass($this->editorialOrchestrator);
-        $method = $reflection->getMethod('getOpening');
-        $method->setAccessible(true);
-
-        $resolveData = [];
-        $result = $method->invokeArgs($this->editorialOrchestrator, [$editorial, $resolveData]);
-
-        static::assertIsArray($result);
-        static::assertArrayNotHasKey('multimediaOpening', $result);
-    }
 }
