@@ -1,0 +1,263 @@
+# =============================================================================
+# Architectural Constraint Specification Template
+# =============================================================================
+# This template defines the structure for architectural constraint specifications.
+# Constraints encode patterns, naming conventions, layer dependencies, and other
+# architectural decisions that must be followed in the codebase.
+#
+# Usage:
+#   1. Replace all {{VARIABLE}} placeholders with actual values
+#   2. Remove any optional sections that don't apply
+#   3. Validate against architectural_constraint_spec.json schema
+#
+# Required fields: constraint_id, name, type, last_extracted
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# CONSTRAINT IDENTIFICATION
+# -----------------------------------------------------------------------------
+
+# Unique identifier (format: TYPE-NNN, e.g., "ARCH-001", "LAYER-002", "NAME-003")
+constraint_id: "{{CONSTRAINT_ID}}"
+
+# Short, descriptive name for the constraint
+name: "{{CONSTRAINT_NAME}}"
+
+# Full description of the architectural constraint
+description: "{{CONSTRAINT_DESCRIPTION}}"
+
+# -----------------------------------------------------------------------------
+# CLASSIFICATION
+# -----------------------------------------------------------------------------
+
+# Type of architectural constraint
+# Options: layer_dependency, naming_convention, file_organization,
+#          import_restriction, pattern_enforcement, module_boundary,
+#          technology_constraint, security_boundary
+type: "{{CONSTRAINT_TYPE}}"
+
+# How strictly this constraint must be followed
+# Options: mandatory (must follow), recommended (should follow), optional (may follow)
+severity: "{{SEVERITY}}"
+
+# -----------------------------------------------------------------------------
+# METADATA
+# -----------------------------------------------------------------------------
+
+# Timestamp of when this spec was last extracted/updated (ISO 8601 format)
+last_extracted: "{{EXTRACTION_TIMESTAMP}}"
+
+# Confidence level of the extraction (e.g., "95%", "80%")
+confidence: "{{CONFIDENCE_PERCENTAGE}}"
+
+# -----------------------------------------------------------------------------
+# SCOPE
+# -----------------------------------------------------------------------------
+# Where this constraint applies
+scope:
+  # Architectural layers: domain, application, infrastructure, presentation, shared
+  layers:
+    - "{{LAYER_1}}"
+    - "{{LAYER_2}}"
+
+  # Specific modules or namespaces
+  modules:
+    - "{{MODULE_1}}"
+    - "{{MODULE_2}}"
+
+  # Glob patterns for affected files
+  file_patterns:
+    - "{{FILE_PATTERN_1}}"
+    - "{{FILE_PATTERN_2}}"
+
+# -----------------------------------------------------------------------------
+# RULE DEFINITION
+# -----------------------------------------------------------------------------
+# The actual constraint rules
+rule:
+  # Things that MUST be done (required)
+  must:
+    - "{{MUST_RULE_1}}"
+    - "{{MUST_RULE_2}}"
+
+  # Things that MUST NOT be done (prohibited)
+  must_not:
+    - "{{MUST_NOT_RULE_1}}"
+    - "{{MUST_NOT_RULE_2}}"
+
+  # Things that SHOULD be done (recommended)
+  should:
+    - "{{SHOULD_RULE_1}}"
+    - "{{SHOULD_RULE_2}}"
+
+  # Things that MAY be done (optional/allowed)
+  may:
+    - "{{MAY_RULE_1}}"
+    - "{{MAY_RULE_2}}"
+
+# -----------------------------------------------------------------------------
+# LAYER DEPENDENCIES (for layer_dependency type)
+# -----------------------------------------------------------------------------
+# Allowed and prohibited imports between layers
+layer_dependencies:
+  # Domain layer dependency rules
+  domain:
+    # What domain layer CAN import
+    can_import:
+      - "{{DOMAIN_CAN_IMPORT_1}}"
+    # What domain layer CANNOT import
+    cannot_import:
+      - "application"
+      - "infrastructure"
+      - "presentation"
+
+  # Application layer dependency rules
+  application:
+    can_import:
+      - "domain"
+      - "{{APP_CAN_IMPORT_1}}"
+    cannot_import:
+      - "infrastructure"
+      - "presentation"
+
+  # Infrastructure layer dependency rules
+  infrastructure:
+    can_import:
+      - "domain"
+      - "application"
+      - "{{INFRA_CAN_IMPORT_1}}"
+    cannot_import:
+      - "presentation"
+
+  # Presentation layer dependency rules
+  presentation:
+    can_import:
+      - "application"
+      - "{{PRES_CAN_IMPORT_1}}"
+    cannot_import:
+      - "domain"
+      - "infrastructure"
+
+# -----------------------------------------------------------------------------
+# NAMING CONVENTIONS (for naming_convention type)
+# -----------------------------------------------------------------------------
+naming_conventions:
+  # File naming patterns
+  files:
+    "{{FILE_TYPE_1}}":
+      # Regex pattern for the file name
+      pattern: "{{FILE_PATTERN}}"
+      # Example of correct naming
+      example: "{{FILE_EXAMPLE}}"
+    "{{FILE_TYPE_2}}":
+      pattern: "{{FILE_PATTERN_2}}"
+      example: "{{FILE_EXAMPLE_2}}"
+
+  # Class naming patterns
+  classes:
+    "{{CLASS_TYPE_1}}":
+      pattern: "{{CLASS_PATTERN}}"
+      # Required suffix (e.g., "Service", "Repository")
+      suffix: "{{CLASS_SUFFIX}}"
+      # Required prefix (if any)
+      prefix: "{{CLASS_PREFIX}}"
+      example: "{{CLASS_EXAMPLE}}"
+    "{{CLASS_TYPE_2}}":
+      pattern: "{{CLASS_PATTERN_2}}"
+      suffix: "{{CLASS_SUFFIX_2}}"
+      example: "{{CLASS_EXAMPLE_2}}"
+
+  # Function/method naming patterns
+  functions:
+    "{{FUNCTION_TYPE_1}}":
+      pattern: "{{FUNCTION_PATTERN}}"
+      example: "{{FUNCTION_EXAMPLE}}"
+
+  # Variable naming patterns
+  variables:
+    "{{VARIABLE_TYPE_1}}":
+      pattern: "{{VARIABLE_PATTERN}}"
+      example: "{{VARIABLE_EXAMPLE}}"
+
+# -----------------------------------------------------------------------------
+# FILE ORGANIZATION (for file_organization type)
+# -----------------------------------------------------------------------------
+file_organization:
+  structure:
+    "{{DIRECTORY_1}}":
+      # Path from project root
+      path: "{{DIRECTORY_PATH_1}}"
+      # What types of files this directory contains
+      contains:
+        - "{{CONTAINS_TYPE_1}}"
+        - "{{CONTAINS_TYPE_2}}"
+      # Purpose of this directory
+      purpose: "{{DIRECTORY_PURPOSE_1}}"
+
+    "{{DIRECTORY_2}}":
+      path: "{{DIRECTORY_PATH_2}}"
+      contains:
+        - "{{CONTAINS_TYPE_3}}"
+      purpose: "{{DIRECTORY_PURPOSE_2}}"
+
+# -----------------------------------------------------------------------------
+# PATTERNS REQUIRED (for pattern_enforcement type)
+# -----------------------------------------------------------------------------
+# Design patterns that must be used
+patterns_required:
+  - pattern: "{{PATTERN_NAME_1}}"
+    # Where this pattern should be applied
+    where: "{{PATTERN_WHERE_1}}"
+    # Example of correct implementation
+    example: "{{PATTERN_EXAMPLE_1}}"
+
+  - pattern: "{{PATTERN_NAME_2}}"
+    where: "{{PATTERN_WHERE_2}}"
+    example: "{{PATTERN_EXAMPLE_2}}"
+
+# -----------------------------------------------------------------------------
+# VIOLATIONS FOUND
+# -----------------------------------------------------------------------------
+# Current violations detected (for drift monitoring)
+violations_found:
+  - file: "{{VIOLATION_FILE_1}}"
+    # Line number where violation occurs
+    line: 0
+    description: "{{VIOLATION_DESCRIPTION_1}}"
+    # Severity of this violation
+    severity: "{{VIOLATION_SEVERITY_1}}"
+
+  - file: "{{VIOLATION_FILE_2}}"
+    line: 0
+    description: "{{VIOLATION_DESCRIPTION_2}}"
+    severity: "{{VIOLATION_SEVERITY_2}}"
+
+# -----------------------------------------------------------------------------
+# RATIONALE
+# -----------------------------------------------------------------------------
+# Why this constraint exists (architectural decision reasoning)
+rationale: "{{CONSTRAINT_RATIONALE}}"
+
+# -----------------------------------------------------------------------------
+# REFERENCES
+# -----------------------------------------------------------------------------
+# Links to documentation, ADRs, or external resources
+references:
+  - "{{REFERENCE_URL_1}}"
+  - "{{REFERENCE_URL_2}}"
+
+# -----------------------------------------------------------------------------
+# ENFORCEMENT
+# -----------------------------------------------------------------------------
+# Tools or configurations that enforce this constraint
+enforced_by:
+  - "{{ENFORCEMENT_TOOL_1}}"
+  - "{{ENFORCEMENT_TOOL_2}}"
+
+# -----------------------------------------------------------------------------
+# EXTRACTION METADATA
+# -----------------------------------------------------------------------------
+# Source files analyzed to extract this specification
+extracted_from:
+  - "{{SOURCE_FILE_1}}"
+  - "{{SOURCE_FILE_2}}"

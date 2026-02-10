@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workflow.local/schemas/task_spec.json",
+  "title": "Task Specification",
+  "description": "Schema for validating individual task definitions",
+  "type": "object",
+  "required": ["version", "task"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+    "task": {
+      "type": "object",
+      "required": ["id", "title", "role", "acceptance_criteria", "done_when"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z]{2,3}-\\d{3}$",
+          "description": "Task ID (BE-001, FE-001, QA-001)"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 100
+        },
+        "role": {
+          "enum": ["backend", "frontend", "qa", "devops", "planner"],
+          "description": "Responsible role"
+        },
+        "feature_id": {
+          "type": "string",
+          "description": "Parent feature ID"
+        },
+        "priority": {
+          "enum": ["critical", "high", "medium", "low"],
+          "default": "medium"
+        },
+        "status": {
+          "enum": ["pending", "in_progress", "review", "completed", "blocked"],
+          "default": "pending"
+        },
+        "methodology": {
+          "enum": ["TDD", "BDD", "standard"],
+          "default": "TDD"
+        },
+        "max_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10,
+          "description": "Max self-correction iterations"
+        },
+        "reference": {
+          "type": "string",
+          "description": "Reference document or requirement"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed task description"
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "done_when": {
+          "type": "string",
+          "description": "Clear completion criteria"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Blocking task IDs"
+        },
+        "files_to_create": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Files this task should create"
+        },
+        "files_to_modify": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Existing files to modify"
+        },
+        "tests": {
+          "type": "object",
+          "properties": {
+            "unit": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "integration": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "e2e": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "properties": {
+            "commands": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Commands to verify completion"
+            },
+            "expected_output": {
+              "type": "string",
+              "description": "Expected verification output"
+            }
+          }
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "related_files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Files to read for context"
+        },
+        "related_docs": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Documentation references"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional context for the agent"
+        }
+      }
+    }
+  }
+}

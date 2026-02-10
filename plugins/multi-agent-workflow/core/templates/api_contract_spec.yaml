@@ -1,0 +1,318 @@
+# =============================================================================
+# API Contract Specification Template
+# =============================================================================
+# This template defines the structure for API contract specifications.
+# It describes endpoints, request/response formats, authentication, and models.
+#
+# Usage:
+#   1. Replace all {{VARIABLE}} placeholders with actual values
+#   2. Remove any optional sections that don't apply
+#   3. Validate against api_contract.json schema
+#
+# Required fields: version, api (with name, base_path, endpoints)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# VERSION
+# -----------------------------------------------------------------------------
+# Schema version (format: MAJOR.MINOR, e.g., "1.0", "2.1")
+version: "{{SCHEMA_VERSION}}"
+
+# -----------------------------------------------------------------------------
+# API DEFINITION
+# -----------------------------------------------------------------------------
+api:
+  # API name (human-readable identifier)
+  name: "{{API_NAME}}"
+
+  # Description of what this API provides
+  description: "{{API_DESCRIPTION}}"
+
+  # Base path for all endpoints (must start with /)
+  base_path: "{{BASE_PATH}}"
+
+  # API version string (e.g., "v1", "v2")
+  version: "{{API_VERSION}}"
+
+  # ---------------------------------------------------------------------------
+  # AUTHENTICATION
+  # ---------------------------------------------------------------------------
+  auth:
+    # Authentication type: bearer, basic, api_key, oauth2, none
+    type: "{{AUTH_TYPE}}"
+    # Is authentication required by default for all endpoints?
+    required: true
+
+  # ---------------------------------------------------------------------------
+  # ENDPOINTS
+  # ---------------------------------------------------------------------------
+  # Define all API endpoints
+  endpoints:
+    # -------------------------------------------------------------------------
+    # GET Endpoint Example
+    # -------------------------------------------------------------------------
+    - path: "{{ENDPOINT_PATH_1}}"
+      # HTTP method: GET, POST, PUT, PATCH, DELETE
+      method: "GET"
+      # Short description of what this endpoint does
+      summary: "{{ENDPOINT_SUMMARY_1}}"
+      # Detailed description
+      description: "{{ENDPOINT_DESCRIPTION_1}}"
+      # Tags for grouping/categorization
+      tags:
+        - "{{TAG_1}}"
+        - "{{TAG_2}}"
+      # Does this endpoint require authentication? (overrides api.auth.required)
+      auth_required: true
+
+      # Parameters (path, query, header, cookie)
+      parameters:
+        # Path parameter example
+        - name: "{{PATH_PARAM_NAME}}"
+          # Parameter location: path, query, header, cookie
+          in: "path"
+          # Data type: string, integer, boolean, array, object
+          type: "string"
+          # Is this parameter required?
+          required: true
+          description: "{{PATH_PARAM_DESCRIPTION}}"
+          example: "{{PATH_PARAM_EXAMPLE}}"
+
+        # Query parameter example
+        - name: "{{QUERY_PARAM_NAME}}"
+          in: "query"
+          type: "integer"
+          required: false
+          description: "{{QUERY_PARAM_DESCRIPTION}}"
+          default: 1
+          example: 1
+
+      # Response definitions keyed by HTTP status code
+      responses:
+        "200":
+          description: "{{SUCCESS_RESPONSE_DESC}}"
+          content_type: "application/json"
+          # Schema can be inline object or reference to model
+          schema: "{{RESPONSE_MODEL_REF}}"
+          example:
+            id: "{{EXAMPLE_ID}}"
+            name: "{{EXAMPLE_NAME}}"
+
+        "404":
+          description: "{{NOT_FOUND_DESC}}"
+          content_type: "application/json"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+              message:
+                type: "string"
+
+    # -------------------------------------------------------------------------
+    # POST Endpoint Example (with request body)
+    # -------------------------------------------------------------------------
+    - path: "{{ENDPOINT_PATH_2}}"
+      method: "POST"
+      summary: "{{ENDPOINT_SUMMARY_2}}"
+      description: "{{ENDPOINT_DESCRIPTION_2}}"
+      tags:
+        - "{{TAG_1}}"
+      auth_required: true
+
+      # Request body definition
+      request_body:
+        # Content type of the request body
+        content_type: "application/json"
+        # Is the request body required?
+        required: true
+        # Schema can be inline or reference to model
+        schema: "{{REQUEST_MODEL_REF}}"
+        # Example request body
+        example:
+          field1: "{{EXAMPLE_FIELD1}}"
+          field2: "{{EXAMPLE_FIELD2}}"
+
+      responses:
+        "201":
+          description: "{{CREATED_RESPONSE_DESC}}"
+          content_type: "application/json"
+          schema: "{{RESPONSE_MODEL_REF}}"
+          # Response headers
+          headers:
+            Location: "{{CREATED_RESOURCE_URL}}"
+
+        "400":
+          description: "{{BAD_REQUEST_DESC}}"
+          content_type: "application/json"
+          schema:
+            type: "object"
+            properties:
+              errors:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    field:
+                      type: "string"
+                    message:
+                      type: "string"
+
+        "422":
+          description: "{{VALIDATION_ERROR_DESC}}"
+          content_type: "application/json"
+
+    # -------------------------------------------------------------------------
+    # PUT Endpoint Example (full update)
+    # -------------------------------------------------------------------------
+    - path: "{{ENDPOINT_PATH_3}}"
+      method: "PUT"
+      summary: "{{ENDPOINT_SUMMARY_3}}"
+      description: "{{ENDPOINT_DESCRIPTION_3}}"
+      tags:
+        - "{{TAG_1}}"
+      auth_required: true
+
+      parameters:
+        - name: "id"
+          in: "path"
+          type: "string"
+          required: true
+          description: "{{RESOURCE_ID_DESC}}"
+
+      request_body:
+        content_type: "application/json"
+        required: true
+        schema: "{{UPDATE_MODEL_REF}}"
+
+      responses:
+        "200":
+          description: "{{UPDATE_SUCCESS_DESC}}"
+          content_type: "application/json"
+          schema: "{{RESPONSE_MODEL_REF}}"
+
+        "404":
+          description: "{{NOT_FOUND_DESC}}"
+
+    # -------------------------------------------------------------------------
+    # PATCH Endpoint Example (partial update)
+    # -------------------------------------------------------------------------
+    - path: "{{ENDPOINT_PATH_4}}"
+      method: "PATCH"
+      summary: "{{ENDPOINT_SUMMARY_4}}"
+      description: "{{ENDPOINT_DESCRIPTION_4}}"
+      tags:
+        - "{{TAG_1}}"
+      auth_required: true
+
+      parameters:
+        - name: "id"
+          in: "path"
+          type: "string"
+          required: true
+
+      request_body:
+        content_type: "application/json"
+        required: true
+        schema: "{{PATCH_MODEL_REF}}"
+
+      responses:
+        "200":
+          description: "{{PATCH_SUCCESS_DESC}}"
+          schema: "{{RESPONSE_MODEL_REF}}"
+
+    # -------------------------------------------------------------------------
+    # DELETE Endpoint Example
+    # -------------------------------------------------------------------------
+    - path: "{{ENDPOINT_PATH_5}}"
+      method: "DELETE"
+      summary: "{{ENDPOINT_SUMMARY_5}}"
+      description: "{{ENDPOINT_DESCRIPTION_5}}"
+      tags:
+        - "{{TAG_1}}"
+      auth_required: true
+
+      parameters:
+        - name: "id"
+          in: "path"
+          type: "string"
+          required: true
+
+      responses:
+        "204":
+          description: "{{DELETE_SUCCESS_DESC}}"
+
+        "404":
+          description: "{{NOT_FOUND_DESC}}"
+
+# -----------------------------------------------------------------------------
+# MODELS
+# -----------------------------------------------------------------------------
+# Data models used by the API (reusable schemas)
+models:
+  # Model definition example
+  "{{MODEL_NAME_1}}":
+    type: "object"
+    description: "{{MODEL_DESCRIPTION_1}}"
+    # Required properties
+    required:
+      - "{{REQUIRED_PROP_1}}"
+      - "{{REQUIRED_PROP_2}}"
+    # Property definitions
+    properties:
+      "{{PROP_NAME_1}}":
+        type: "string"
+        description: "{{PROP_DESCRIPTION_1}}"
+        required: true
+        example: "{{PROP_EXAMPLE_1}}"
+      "{{PROP_NAME_2}}":
+        type: "integer"
+        description: "{{PROP_DESCRIPTION_2}}"
+        required: false
+        example: 42
+      "{{PROP_NAME_3}}":
+        type: "boolean"
+        description: "{{PROP_DESCRIPTION_3}}"
+        required: false
+        example: true
+
+  # List/Collection model example
+  "{{MODEL_NAME_2}}":
+    type: "object"
+    description: "{{MODEL_DESCRIPTION_2}}"
+    properties:
+      data:
+        type: "array"
+        description: "List of items"
+      meta:
+        type: "object"
+        description: "Pagination metadata"
+      total:
+        type: "integer"
+        description: "Total count"
+      page:
+        type: "integer"
+        description: "Current page"
+      per_page:
+        type: "integer"
+        description: "Items per page"
+
+  # Error response model
+  "ErrorResponse":
+    type: "object"
+    description: "Standard error response format"
+    required:
+      - "error"
+      - "message"
+    properties:
+      error:
+        type: "string"
+        description: "Error code"
+        example: "VALIDATION_ERROR"
+      message:
+        type: "string"
+        description: "Human-readable error message"
+        example: "Invalid input data"
+      details:
+        type: "array"
+        description: "Detailed error information"

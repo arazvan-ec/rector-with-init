@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "entity_spec.json",
+  "title": "Entity Specification",
+  "description": "Schema for extracted entity specifications from project code",
+  "type": "object",
+  "required": ["entity", "source_file", "last_extracted", "fields"],
+  "properties": {
+    "entity": {
+      "type": "string",
+      "description": "Name of the entity (PascalCase)"
+    },
+    "source_file": {
+      "type": "string",
+      "description": "Primary source file path"
+    },
+    "last_extracted": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last extraction"
+    },
+    "confidence": {
+      "type": "string",
+      "pattern": "^[0-9]{1,3}%$",
+      "description": "Confidence level of extraction (e.g., '95%')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of the entity's purpose"
+    },
+    "fields": {
+      "type": "array",
+      "description": "List of entity fields",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Field name"
+          },
+          "type": {
+            "type": "string",
+            "description": "Field data type (string, number, boolean, UUID, datetime, enum, etc.)"
+          },
+          "constraints": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Field constraints (primary_key, unique, not_null, auto_generated, etc.)"
+          },
+          "validation": {
+            "type": "string",
+            "description": "Validation rule applied (email_format, url, min_length:X, etc.)"
+          },
+          "default": {
+            "description": "Default value if any"
+          },
+          "values": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Possible values for enum types"
+          },
+          "storage": {
+            "type": "string",
+            "description": "Storage details (hashed_bcrypt, encrypted, etc.)"
+          },
+          "nullable": {
+            "type": "boolean",
+            "default": false
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "description": "Relationships with other entities",
+      "items": {
+        "type": "object",
+        "required": ["type", "target"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["has_one", "has_many", "belongs_to", "many_to_many"],
+            "description": "Relationship type"
+          },
+          "target": {
+            "type": "string",
+            "description": "Target entity name"
+          },
+          "foreign_key": {
+            "type": "string",
+            "description": "Foreign key field name"
+          },
+          "through": {
+            "type": "string",
+            "description": "Junction table for many-to-many"
+          },
+          "cascade": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["delete", "update", "persist"]
+            }
+          }
+        }
+      }
+    },
+    "business_rules": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Business rules that apply to this entity"
+    },
+    "value_objects": {
+      "type": "array",
+      "description": "Value objects used by this entity",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "field": { "type": "string" },
+          "source_file": { "type": "string" }
+        }
+      }
+    },
+    "extracted_from": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "All source files analyzed to extract this spec"
+    },
+    "repository": {
+      "type": "object",
+      "description": "Repository interface for this entity",
+      "properties": {
+        "interface": { "type": "string" },
+        "implementation": { "type": "string" },
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "parameters": { "type": "array", "items": { "type": "string" } },
+              "returns": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "table": {
+      "type": "object",
+      "description": "Database table mapping",
+      "properties": {
+        "name": { "type": "string" },
+        "schema": { "type": "string" }
+      }
+    },
+    "timestamps": {
+      "type": "object",
+      "properties": {
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "deleted_at": { "type": "string" }
+      }
+    },
+    "soft_delete": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

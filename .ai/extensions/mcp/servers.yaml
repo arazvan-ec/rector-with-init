@@ -1,0 +1,316 @@
+# MCP (Model Context Protocol) Server Configuration
+# Feature: MCP Integration for Multi-Agent Workflow
+# Version: 1.0.0
+#
+# This file configures MCP servers that agents can use to access
+# external tools and services during workflow execution.
+#
+# Environment variables should be set in your shell or .env file
+# (never commit actual secrets to this file).
+
+version: "1.0"
+
+# Global MCP settings
+settings:
+  # Maximum time (ms) to wait for MCP server connection
+  connection_timeout: 30000
+
+  # Maximum time (ms) for tool execution
+  execution_timeout: 120000
+
+  # Enable verbose logging for debugging
+  debug: false
+
+  # Retry configuration for transient failures
+  retry:
+    max_attempts: 3
+    backoff_ms: 1000
+
+# MCP Server Definitions
+servers:
+  # ============================================================
+  # PostgreSQL Database Server
+  # Purpose: Database access for migrations validation and queries
+  # ============================================================
+  postgres:
+    description: "Database access for migrations validation, schema inspection, and query execution"
+    command: "npx"
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-postgres"
+
+    env:
+      POSTGRES_HOST: "${POSTGRES_HOST:-localhost}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DATABASE: "${POSTGRES_DATABASE}"
+
+    # Role-based access control
+    allowed_roles:
+      - planner      # Can inspect schema for planning
+      - backend      # Can validate migrations, run queries
+      - qa           # Can verify data integrity
+
+    denied_roles:
+      - frontend     # Frontend should use API, not direct DB access
+
+    # Available tools from this server
+    tools:
+      - name: query
+        description: "Execute SELECT queries (read-only by default)"
+        trust_level: medium
+      - name: describe_table
+        description: "Get table schema information"
+        trust_level: high
+      - name: list_tables
+        description: "List all tables in database"
+        trust_level: high
+
+    # Security constraints
+    security:
+      read_only: true              # Only allow SELECT queries by default
+      max_rows: 1000               # Limit result set size
+      allowed_schemas:
+        - public
+        - app
+      blocked_tables:
+        - users_credentials        # Never expose credential tables
+        - payment_tokens
+        - api_keys
+
+  # ============================================================
+  # GitHub Server
+  # Purpose: PR creation, issue reading, repository management
+  # ============================================================
+  github:
+    description: "GitHub integration for PR creation, issue management, and code review"
+    command: "npx"
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-github"
+
+    env:
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
+      GITHUB_OWNER: "${GITHUB_OWNER}"
+      GITHUB_REPO: "${GITHUB_REPO}"
+
+    # Role-based access control
+    allowed_roles:
+      - planner      # Can create issues, read PRs
+      - backend      # Can create PRs, read issues
+      - frontend     # Can create PRs, read issues
+      - qa           # Can comment on PRs, create issues for bugs
+
+    # Available tools from this server
+    tools:
+      - name: create_pull_request
+        description: "Create a new pull request"
+        trust_level: medium
+        allowed_roles:
+          - backend
+          - frontend
+      - name: create_issue
+        description: "Create a new issue"
+        trust_level: medium
+      - name: get_issue
+        description: "Get issue details"
+        trust_level: high
+      - name: list_issues
+        description: "List repository issues"
+        trust_level: high
+      - name: add_comment
+        description: "Add comment to issue or PR"
+        trust_level: medium
+      - name: get_pull_request
+        description: "Get PR details and diff"
+        trust_level: high
+      - name: list_pull_requests
+        description: "List repository PRs"
+        trust_level: high
+      - name: merge_pull_request
+        description: "Merge a pull request"
+        trust_level: low
+        allowed_roles:
+          - planner    # Only planner can merge
+
+    # Security constraints
+    security:
+      require_review_before_merge: true
+      protected_branches:
+        - main
+        - master
+        - develop
+
+  # ============================================================
+  # Slack Server
+  # Purpose: Notifications when roles are BLOCKED or need attention
+  # ============================================================
+  slack:
+    description: "Slack notifications for workflow events, especially BLOCKED status"
+    command: "npx"
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-slack"
+
+    env:
+      SLACK_BOT_TOKEN: "${SLACK_BOT_TOKEN}"
+      SLACK_DEFAULT_CHANNEL: "${SLACK_CHANNEL:-#dev-workflow}"
+
+    # Role-based access control
+    allowed_roles:
+      - planner      # Can send any notification
+      - backend      # Can notify about blockers
+      - frontend     # Can notify about blockers
+      - qa           # Can notify about test failures, blockers
+
+    # Available tools from this server
+    tools:
+      - name: send_message
+        description: "Send a message to a Slack channel"
+        trust_level: medium
+      - name: send_thread_reply
+        description: "Reply to a thread"
+        trust_level: medium
+      - name: list_channels
+        description: "List available channels"
+        trust_level: high
+      - name: get_channel_history
+        description: "Get recent messages from a channel"
+        trust_level: medium
+
+    # Notification templates for common events
+    templates:
+      blocked:
+        channel: "#dev-workflow"
+        message: ":rotating_light: *BLOCKED* - {role} on feature `{feature}`\n*Reason*: {reason}\n*Needs*: {needs}"
+
+      completed:
+        channel: "#dev-workflow"
+        message: ":white_check_mark: *COMPLETED* - {role} finished `{feature}`\n*Summary*: {summary}"
+
+      qa_rejected:
+        channel: "#dev-workflow"
+        message: ":x: *QA REJECTED* - Feature `{feature}`\n*Issues*: {issues}"
+
+      qa_approved:
+        channel: "#dev-workflow"
+        message: ":tada: *QA APPROVED* - Feature `{feature}` ready for merge!"
+
+    # Security constraints
+    security:
+      allowed_channels:
+        - "#dev-workflow"
+        - "#dev-alerts"
+        - "#engineering"
+      rate_limit:
+        max_messages_per_minute: 10
+
+  # ============================================================
+  # Puppeteer Server
+  # Purpose: UI verification automation, screenshot capture, E2E testing
+  # ============================================================
+  puppeteer:
+    description: "Browser automation for UI verification, screenshots, and E2E testing"
+    command: "npx"
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-puppeteer"
+
+    env:
+      PUPPETEER_HEADLESS: "${PUPPETEER_HEADLESS:-true}"
+      PUPPETEER_TIMEOUT: "${PUPPETEER_TIMEOUT:-30000}"
+
+    # Role-based access control
+    allowed_roles:
+      - frontend     # Primary user for UI testing
+      - qa           # Can run E2E tests, verify UI
+
+    denied_roles:
+      - planner      # No need for browser automation
+      - backend      # No need for browser automation
+
+    # Available tools from this server
+    tools:
+      - name: navigate
+        description: "Navigate to a URL"
+        trust_level: medium
+      - name: screenshot
+        description: "Capture screenshot of current page"
+        trust_level: high
+      - name: click
+        description: "Click an element"
+        trust_level: medium
+      - name: fill
+        description: "Fill a form field"
+        trust_level: medium
+      - name: evaluate
+        description: "Execute JavaScript in browser context"
+        trust_level: low
+        allowed_roles:
+          - qa         # Only QA can run arbitrary JS
+      - name: get_content
+        description: "Get page text content"
+        trust_level: high
+      - name: wait_for_selector
+        description: "Wait for element to appear"
+        trust_level: high
+
+    # Security constraints
+    security:
+      allowed_domains:
+        - "localhost"
+        - "127.0.0.1"
+        - "${APP_DOMAIN:-localhost}"
+        - "*.${APP_DOMAIN:-localhost}"
+      blocked_domains:
+        - "*.google.com"       # Don't navigate to external auth
+        - "*.facebook.com"
+        - "*.github.com"       # Use github MCP server instead
+      max_screenshots_per_session: 50
+      screenshot_directory: ".ai/project/screenshots"
+
+# ============================================================
+# Trust Level Definitions
+# ============================================================
+#
+# Trust levels determine supervision requirements:
+#
+# high:   - Auto-approved, no supervision needed
+#         - Read-only operations, listing, describing
+#
+# medium: - Requires logging, can be auto-approved for high-trust roles
+#         - Write operations that are reversible
+#
+# low:    - Requires explicit approval or pair programming
+#         - Destructive or irreversible operations
+#
+# See .ai/extensions/trust/trust_model.yaml for full trust configuration
+
+# ============================================================
+# Role-Based Access Summary
+# ============================================================
+#
+# | Server     | Planner | Backend | Frontend | QA  |
+# |------------|---------|---------|----------|-----|
+# | postgres   |    R    |   R/W   |    -     |  R  |
+# | github     |  Full   |   PR    |   PR     | Comment |
+# | slack      |  Full   | Notify  | Notify   | Notify |
+# | puppeteer  |    -    |    -    |  Full    | Full |
+#
+# R = Read only, W = Write, PR = Pull Request operations
+# Full = All operations, Notify = Notifications only
+
+# ============================================================
+# Adding New Servers
+# ============================================================
+#
+# To add a new MCP server:
+#
+# 1. Add server configuration following the pattern above
+# 2. Define environment variables (document in README.md)
+# 3. Specify allowed_roles for access control
+# 4. List available tools with trust_level
+# 5. Add security constraints as appropriate
+# 6. Update MCP_INTEGRATION.md with usage examples
+# 7. Test with: /workflows:mcp-test <server-name>

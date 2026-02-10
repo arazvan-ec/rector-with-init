@@ -1,0 +1,570 @@
+# Workflow Performance Metrics Schema
+# Version: 1.0.0
+#
+# This schema defines the data structure for workflow performance metrics.
+# Data is stored in .ai/metrics/ directory as JSON files.
+#
+# Related files:
+# - collector.md: Skill that populates this data
+# - /workflows:metrics: Command that queries this data
+
+version: "1.0"
+
+# =============================================================================
+# WORKFLOW RUNS
+# =============================================================================
+# Tracks each workflow execution from start to finish
+# File: .ai/metrics/workflow_runs.json
+
+workflow_runs:
+  description: "Top-level record for each workflow execution"
+  storage: ".ai/metrics/workflow_runs.json"
+
+  schema:
+    id:
+      type: string
+      format: uuid
+      description: "Unique identifier for this workflow run"
+      example: "550e8400-e29b-41d4-a716-446655440000"
+      required: true
+
+    feature:
+      type: string
+      description: "Feature name being worked on"
+      example: "user-authentication"
+      required: true
+
+    workflow_type:
+      type: string
+      enum: [default, implementation-only, task-breakdown, custom]
+      description: "Type of workflow used"
+      default: "default"
+
+    start:
+      type: string
+      format: iso8601
+      description: "Timestamp when workflow started"
+      example: "2026-01-28T10:30:00Z"
+      required: true
+
+    end:
+      type: string
+      format: iso8601
+      description: "Timestamp when workflow completed (null if in progress)"
+      example: "2026-01-28T18:45:00Z"
+      nullable: true
+
+    status:
+      type: string
+      enum: [in_progress, completed, blocked, abandoned]
+      description: "Current status of the workflow run"
+      required: true
+
+    parallelization_mode:
+      type: string
+      enum: [roles, layers, stack, sequential]
+      description: "How work was parallelized"
+      default: "roles"
+
+    participants:
+      type: array
+      items:
+        type: string
+        enum: [planner, backend, frontend, qa]
+      description: "Roles that participated in this workflow"
+      example: ["planner", "backend", "frontend", "qa"]
+
+    metadata:
+      type: object
+      description: "Additional context about the workflow"
+      properties:
+        branch:
+          type: string
+          description: "Git branch name"
+        commit_count:
+          type: integer
+          description: "Number of commits made"
+        files_changed:
+          type: integer
+          description: "Number of files modified"
+
+# =============================================================================
+# STAGE METRICS
+# =============================================================================
+# Detailed metrics for each stage within a workflow
+# File: .ai/metrics/stage_metrics.json
+
+stage_metrics:
+  description: "Metrics for individual workflow stages"
+  storage: ".ai/metrics/stage_metrics.json"
+
+  schema:
+    id:
+      type: string
+      format: uuid
+      description: "Unique identifier for this stage record"
+      required: true
+
+    workflow_id:
+      type: string
+      format: uuid
+      description: "Reference to parent workflow_run.id"
+      required: true
+      foreign_key: workflow_runs.id
+
+    stage:
+      type: string
+      description: "Name of the workflow stage"
+      example: "domain_layer"
+      required: true
+
+    role:
+      type: string
+      enum: [planner, backend, frontend, qa]
+      description: "Role responsible for this stage"
+      required: true
+
+    start:
+      type: string
+      format: iso8601
+      description: "When this stage started"
+      required: true
+
+    end:
+      type: string
+      format: iso8601
+      description: "When this stage completed"
+      nullable: true
+
+    duration_minutes:
+      type: integer
+      description: "Calculated duration in minutes"
+      computed: true
+
+    iterations:
+      type: integer
+      description: "Number of Ralph Wiggum pattern iterations"
+      default: 1
+      minimum: 1
+      maximum: 10
+
+    status:
+      type: string
+      enum: [pending, in_progress, completed, blocked, skipped]
+      description: "Final status of this stage"
+      required: true
+
+    context_metrics:
+      type: object
+      description: "Context window utilization metrics"
+      properties:
+        files_read:
+          type: integer
+          description: "Number of files read during stage"
+        messages_exchanged:
+          type: integer
+          description: "Number of messages in conversation"
+        context_resets:
+          type: integer
+          description: "Number of context resets needed"
+
+    quality_metrics:
+      type: object
+      description: "Quality indicators for this stage"
+      properties:
+        tests_written:
+          type: integer
+        tests_passing:
+          type: integer
+        coverage_percent:
+          type: number
+        lint_errors_fixed:
+          type: integer
+
+# =============================================================================
+# CHECKPOINT RESULTS
+# =============================================================================
+# Records each checkpoint attempt and outcome
+# File: .ai/metrics/checkpoint_results.json
+
+checkpoint_results:
+  description: "Individual checkpoint pass/fail records"
+  storage: ".ai/metrics/checkpoint_results.json"
+
+  schema:
+    id:
+      type: string
+      format: uuid
+      description: "Unique identifier for this checkpoint record"
+      required: true
+
+    stage_id:
+      type: string
+      format: uuid
+      description: "Reference to parent stage_metrics.id"
+      required: true
+      foreign_key: stage_metrics.id
+
+    checkpoint:
+      type: string
+      description: "Name of the checkpoint"
+      example: "Domain Layer"
+      required: true
+
+    checkpoint_type:
+      type: string
+      enum: [blocking, advisory, informational]
+      description: "How strictly this checkpoint is enforced"
+      default: "blocking"
+
+    timestamp:
+      type: string
+      format: iso8601
+      description: "When this checkpoint was evaluated"
+      required: true
+
+    passed:
+      type: boolean
+      description: "Whether the checkpoint passed"
+      required: true
+
+    attempts:
+      type: integer
+      description: "Number of attempts to pass this checkpoint"
+      minimum: 1
+      maximum: 10
+      required: true
+
+    failure_reasons:
+      type: array
+      items:
+        type: object
+        properties:
+          attempt:
+            type: integer
+          reason:
+            type: string
+          error_type:
+            type: string
+            enum: [test_failure, lint_error, type_error, validation_error, timeout, other]
+      description: "Reasons for each failed attempt"
+
+    resolution:
+      type: object
+      description: "How the checkpoint was eventually resolved"
+      properties:
+        method:
+          type: string
+          enum: [auto_fix, manual_fix, skip, escalate]
+        time_to_resolve_minutes:
+          type: integer
+        notes:
+          type: string
+
+    metrics:
+      type: object
+      description: "Specific metrics captured at checkpoint"
+      properties:
+        test_count:
+          type: integer
+        test_pass_count:
+          type: integer
+        coverage:
+          type: number
+        lint_issues:
+          type: integer
+
+# =============================================================================
+# BLOCKED EVENTS
+# =============================================================================
+# Records when work is blocked and how it's resolved
+# File: .ai/metrics/blocked_events.json
+
+blocked_events:
+  description: "Records of blocked states and their resolution"
+  storage: ".ai/metrics/blocked_events.json"
+
+  schema:
+    id:
+      type: string
+      format: uuid
+      description: "Unique identifier for this blocked event"
+      required: true
+
+    stage_id:
+      type: string
+      format: uuid
+      description: "Reference to stage where block occurred"
+      required: true
+      foreign_key: stage_metrics.id
+
+    workflow_id:
+      type: string
+      format: uuid
+      description: "Reference to parent workflow"
+      required: true
+      foreign_key: workflow_runs.id
+
+    blocked_at:
+      type: string
+      format: iso8601
+      description: "When the block was declared"
+      required: true
+
+    reason:
+      type: string
+      description: "Why work was blocked"
+      required: true
+
+    reason_category:
+      type: string
+      enum:
+        - test_failures_unresolvable
+        - missing_api_dependency
+        - unclear_requirements
+        - external_service_unavailable
+        - architecture_decision_needed
+        - human_approval_required
+        - resource_unavailable
+        - other
+      description: "Categorized reason for blocking"
+      required: true
+
+    iterations_before_block:
+      type: integer
+      description: "How many iterations were attempted before blocking"
+      default: 10
+
+    last_error:
+      type: string
+      description: "The last error message before blocking"
+
+    attempted_solutions:
+      type: array
+      items:
+        type: object
+        properties:
+          approach:
+            type: string
+          result:
+            type: string
+          timestamp:
+            type: string
+            format: iso8601
+      description: "What was tried before declaring blocked"
+
+    resolved_at:
+      type: string
+      format: iso8601
+      description: "When the block was resolved (null if still blocked)"
+      nullable: true
+
+    resolution:
+      type: object
+      description: "How the block was resolved"
+      nullable: true
+      properties:
+        method:
+          type: string
+          enum:
+            - planner_clarification
+            - human_intervention
+            - architecture_change
+            - wait_for_dependency
+            - requirements_update
+            - workaround_applied
+            - abandoned
+        description:
+          type: string
+        resolved_by:
+          type: string
+          enum: [planner, human, automated, external]
+
+    time_to_resolution_minutes:
+      type: integer
+      description: "Calculated time from blocked_at to resolved_at"
+      computed: true
+
+    impact:
+      type: object
+      description: "Impact assessment of the block"
+      properties:
+        other_roles_blocked:
+          type: array
+          items:
+            type: string
+        estimated_delay_minutes:
+          type: integer
+
+# =============================================================================
+# COMPOUND LEARNINGS
+# =============================================================================
+# Tracks captured learnings and their reuse
+# File: .ai/metrics/compound_learnings.json
+
+compound_learnings:
+  description: "Knowledge captured through compound learning"
+  storage: ".ai/metrics/compound_learnings.json"
+
+  schema:
+    id:
+      type: string
+      format: uuid
+      description: "Unique identifier for this learning"
+      required: true
+
+    workflow_id:
+      type: string
+      format: uuid
+      description: "Workflow where this learning was captured"
+      required: true
+      foreign_key: workflow_runs.id
+
+    captured_at:
+      type: string
+      format: iso8601
+      description: "When this learning was recorded"
+      required: true
+
+    category:
+      type: string
+      enum:
+        - pattern_discovery
+        - anti_pattern_identification
+        - rule_update
+        - template_improvement
+        - process_optimization
+        - tool_configuration
+      description: "Type of learning captured"
+      required: true
+
+    title:
+      type: string
+      description: "Short title for the learning"
+      example: "Repository pattern prevents N+1 queries"
+      required: true
+
+    description:
+      type: string
+      description: "Detailed description of the learning"
+      required: true
+
+    context:
+      type: object
+      description: "Context in which this was learned"
+      properties:
+        feature:
+          type: string
+        stage:
+          type: string
+        role:
+          type: string
+        files_involved:
+          type: array
+          items:
+            type: string
+
+    artifact_updates:
+      type: array
+      items:
+        type: object
+        properties:
+          file:
+            type: string
+          change_type:
+            type: string
+            enum: [created, updated, deleted]
+          description:
+            type: string
+      description: "Files updated as result of this learning"
+
+    reuse_count:
+      type: integer
+      description: "Number of times this learning has been applied"
+      default: 0
+
+    reuse_instances:
+      type: array
+      items:
+        type: object
+        properties:
+          workflow_id:
+            type: string
+          timestamp:
+            type: string
+            format: iso8601
+          context:
+            type: string
+      description: "Records of when this learning was applied"
+
+    effectiveness_score:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: "Calculated effectiveness (reuse_count / opportunities)"
+      computed: true
+
+# =============================================================================
+# INDEXES AND QUERIES
+# =============================================================================
+
+indexes:
+  workflow_runs:
+    - field: feature
+      type: btree
+    - field: start
+      type: btree
+    - field: status
+      type: hash
+
+  stage_metrics:
+    - field: workflow_id
+      type: btree
+    - field: role
+      type: hash
+    - field: stage
+      type: hash
+
+  checkpoint_results:
+    - field: stage_id
+      type: btree
+    - field: checkpoint
+      type: hash
+    - field: passed
+      type: hash
+
+  blocked_events:
+    - field: workflow_id
+      type: btree
+    - field: reason_category
+      type: hash
+    - field: resolved_at
+      type: btree
+
+  compound_learnings:
+    - field: category
+      type: hash
+    - field: captured_at
+      type: btree
+
+# Common queries supported by this schema
+common_queries:
+  time_per_stage:
+    description: "Calculate average time spent per stage"
+    aggregation: "AVG(duration_minutes) GROUP BY stage, role"
+
+  checkpoint_pass_rate:
+    description: "Calculate pass rate per checkpoint type"
+    aggregation: "COUNT(passed=true) / COUNT(*) GROUP BY checkpoint"
+
+  iteration_distribution:
+    description: "Distribution of iterations needed"
+    aggregation: "COUNT(*) GROUP BY attempts"
+
+  blocker_analysis:
+    description: "Analyze blockers by category"
+    aggregation: "COUNT(*), AVG(time_to_resolution_minutes) GROUP BY reason_category"
+
+  learning_effectiveness:
+    description: "Measure compound learning reuse"
+    aggregation: "SUM(reuse_count), AVG(effectiveness_score) GROUP BY category"

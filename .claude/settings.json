@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".ai/hooks/lifecycle/pre_tool_use.sh",
+            "description": "Enforce trust model before file edits"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".ai/hooks/lifecycle/post_tool_use.sh",
+            "description": "Update state files and create audit trail"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".ai/hooks/lifecycle/stop.sh",
+            "description": "Auto-checkpoint and verify no unhandled blockers"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".ai/hooks/lifecycle/pre_compact.sh",
+            "description": "Save context summary before compaction"
+          }
+        ]
+      }
+    ]
+  }
+}

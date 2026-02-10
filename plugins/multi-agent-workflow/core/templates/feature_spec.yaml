@@ -1,0 +1,160 @@
+# Feature Specification Template
+# Copy this file to start a new feature spec
+# Validate with: /workflows:validate <path>
+
+version: "1.0"
+
+feature:
+  id: "feature-name"          # kebab-case identifier
+  name: "Feature Name"        # Human-readable name
+  priority: medium            # critical, high, medium, low
+  status: planning            # planning, in_progress, review, completed, blocked
+
+metadata:
+  created: "2026-01-27"
+  author: planner
+  estimated_effort: "2-4 weeks"
+  tags:
+    - category
+    - area
+
+objective:
+  summary: |
+    Brief description of what this feature accomplishes.
+    Focus on the user value.
+
+  business_value: |
+    - Quantified benefit 1
+    - Quantified benefit 2
+    - Impact on users/business
+
+  success_metrics:
+    - "Metric 1: Measurable outcome"
+    - "Metric 2: Performance target"
+
+requirements:
+  functional:
+    - id: FR-101
+      title: "Requirement Title"
+      description: |
+        Detailed description of what the system must do.
+      priority: high
+      acceptance_criteria:
+        - "Specific testable criterion 1"
+        - "Specific testable criterion 2"
+        - "Specific testable criterion 3"
+      test_coverage: required    # required, recommended, optional
+
+    - id: FR-102
+      title: "Second Requirement"
+      description: |
+        Another requirement description.
+      priority: medium
+      acceptance_criteria:
+        - "Criterion 1"
+        - "Criterion 2"
+      test_coverage: recommended
+
+  non_functional:
+    - id: NFR-001
+      type: performance
+      requirement: "Operation completes in < 5 seconds"
+
+    - id: NFR-002
+      type: reliability
+      requirement: "99% success rate under normal conditions"
+
+    - id: NFR-003
+      type: security
+      requirement: "All inputs validated and sanitized"
+
+contracts:
+  internal:
+    - name: "Module API"
+      type: bash
+      interface: |
+        function_name(param1, param2)   -> ReturnType
+        another_function(param)         -> OtherType
+
+  api:
+    - endpoint: "/api/v1/resource"
+      method: POST
+      request:
+        body:
+          field1: string
+          field2: integer
+      responses:
+        "200":
+          description: "Success"
+          body:
+            id: string
+            created_at: datetime
+        "400":
+          description: "Validation error"
+        "500":
+          description: "Server error"
+
+tasks:
+  backend:
+    - id: BE-001
+      title: "Task Title"
+      reference: "FR-101"
+      methodology: TDD
+      max_iterations: 10
+      acceptance_criteria:
+        - "Acceptance criterion 1"
+        - "Acceptance criterion 2"
+      done_when: "Clear completion criteria"
+      dependencies: []
+
+    - id: BE-002
+      title: "Second Task"
+      reference: "FR-102"
+      methodology: TDD
+      max_iterations: 10
+      acceptance_criteria:
+        - "Criterion"
+      done_when: "Completion criteria"
+      dependencies:
+        - BE-001
+
+  frontend:
+    - id: FE-001
+      title: "Frontend Task"
+      reference: "FR-101"
+      methodology: TDD
+      max_iterations: 10
+      acceptance_criteria:
+        - "UI criterion"
+      done_when: "UI works correctly"
+      dependencies:
+        - BE-001
+
+  qa:
+    - id: QA-001
+      title: "Test Task"
+      reference: "FR-101, FR-102"
+      methodology: standard
+      max_iterations: 5
+      acceptance_criteria:
+        - "All tests pass"
+        - "Coverage > 80%"
+      done_when: "Tests complete with coverage"
+      dependencies:
+        - BE-001
+        - FE-001
+
+phases:
+  - name: "Phase 1: Foundation"
+    duration: "1 week"
+    deliverables:
+      - "Core module structure"
+      - "Basic API"
+      - "Unit tests"
+
+  - name: "Phase 2: Integration"
+    duration: "1-2 weeks"
+    deliverables:
+      - "Full API"
+      - "Integration tests"
+      - "Documentation"

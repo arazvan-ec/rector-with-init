@@ -1,0 +1,112 @@
+# Session Checkpoint: {{ROLE}} - {{FEATURE_ID}}
+
+> This checkpoint was created to preserve session state before context window limit.
+> Use this to resume work in a new session.
+
+**Created**: {{TIMESTAMP}}
+**Role**: {{ROLE}}
+**Feature**: {{FEATURE_ID}}
+**Workflow**: {{WORKFLOW}}
+
+---
+
+## Session Summary
+
+### What Was Accomplished
+<!-- List what was completed in this session -->
+{{ACCOMPLISHMENTS}}
+
+### Current State
+- **Last Checkpoint Completed**: {{LAST_CHECKPOINT}}
+- **Tests Status**: {{TESTS_STATUS}}
+- **Coverage**: {{COVERAGE}}%
+
+### Files Modified
+<!-- List all files created or modified -->
+{{FILES_MODIFIED}}
+
+---
+
+## Context for Resume
+
+### Key Decisions Made
+<!-- Important architectural or implementation decisions -->
+{{DECISIONS}}
+
+### Important Code Patterns
+<!-- Reference code that should be followed -->
+{{PATTERNS}}
+
+### Gotchas and Edge Cases
+<!-- Things to remember that aren't obvious -->
+{{GOTCHAS}}
+
+---
+
+## Resume Instructions
+
+### 1. Read These Files First
+```
+.ai/project/context.md                          # Project overview
+.ai/workflow/roles/{{ROLE}}.md                  # Your role
+.ai/project/features/{{FEATURE_ID}}/50_state.md # Current state
+{{ADDITIONAL_FILES}}
+```
+
+### 2. Current Task
+{{CURRENT_TASK}}
+
+### 3. Next Steps
+{{NEXT_STEPS}}
+
+### 4. Commands to Run
+```bash
+# Sync with remote first
+./.ai/workflow/scripts/git_sync.sh {{FEATURE_ID}}
+
+# Then continue implementation
+{{COMMANDS}}
+```
+
+---
+
+## Technical Context
+
+### Code References
+<!-- Specific files/lines that are relevant -->
+{{CODE_REFERENCES}}
+
+### Test Commands
+```bash
+{{TEST_COMMANDS}}
+```
+
+### Verification Commands
+```bash
+{{VERIFICATION_COMMANDS}}
+```
+
+---
+
+## Blockers (if any)
+
+{{BLOCKERS}}
+
+---
+
+## Notes for Next Session
+
+{{NOTES}}
+
+---
+
+**Checkpoint Validity**: This checkpoint is valid for resuming within 24 hours.
+After that, re-read context.md as project state may have changed.
+
+**Resume Command**:
+```bash
+# Start new Claude session and paste:
+I am resuming as {{ROLE}} for feature {{FEATURE_ID}}.
+Please read the checkpoint at: .ai/project/features/{{FEATURE_ID}}/checkpoints/{{CHECKPOINT_FILE}}
+Then continue from where we left off.
+```

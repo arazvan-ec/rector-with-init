@@ -1,0 +1,207 @@
+# Feature State: {{FEATURE_ID}}
+
+> This file tracks the state of each role and provides completion signals.
+> Update your section when completing checkpoints or changing status.
+
+**Feature**: {{FEATURE_ID}}
+**Workflow**: {{WORKFLOW}}
+**Created**: {{CREATED_DATE}}
+**Last Updated**: {{UPDATED_DATE}}
+
+---
+
+## Planner
+
+| Field | Value |
+|-------|-------|
+| **Status** | `PENDING` |
+| **Completion Signal** | `false` |
+| **Started** | - |
+| **Completed** | - |
+
+### Progress
+- [ ] Requirements analysis
+- [ ] Architecture design
+- [ ] API contracts
+- [ ] Task breakdown
+
+### Artifacts Created
+<!-- List artifacts created by Planner -->
+
+### Notes
+<!-- Any important notes or decisions -->
+
+### Next Action
+<!-- What needs to happen next, or null if complete -->
+
+---
+
+## Backend
+
+| Field | Value |
+|-------|-------|
+| **Status** | `PENDING` |
+| **Completion Signal** | `false` |
+| **Started** | - |
+| **Completed** | - |
+| **Depends On** | Planner |
+
+### Checkpoints
+- [ ] Domain Layer
+- [ ] Application Layer
+- [ ] Infrastructure Layer
+- [ ] API Endpoints
+
+### Auto-Correction Loop
+| Checkpoint | Iterations | Result |
+|------------|------------|--------|
+| - | - | - |
+
+### Artifacts Created
+<!-- List files created by Backend -->
+
+### Test Results
+```
+# Paste test output here
+```
+
+### Coverage
+- **Lines**: -%
+- **Branches**: -%
+
+### Blockers
+<!-- Any blockers encountered -->
+
+### Next Action
+<!-- What needs to happen next, or null if complete -->
+
+---
+
+## Frontend
+
+| Field | Value |
+|-------|-------|
+| **Status** | `PENDING` |
+| **Completion Signal** | `false` |
+| **Started** | - |
+| **Completed** | - |
+| **Depends On** | Planner |
+| **API Ready** | `false` |
+
+### Checkpoints
+- [ ] Component Structure
+- [ ] Form Logic
+- [ ] API Integration
+- [ ] Responsive & A11y
+
+### Auto-Correction Loop
+| Checkpoint | Iterations | Result |
+|------------|------------|--------|
+| - | - | - |
+
+### Artifacts Created
+<!-- List files created by Frontend -->
+
+### Test Results
+```
+# Paste test output here
+```
+
+### Lighthouse Scores
+| Metric | Score |
+|--------|-------|
+| Performance | - |
+| Accessibility | - |
+| Best Practices | - |
+| SEO | - |
+
+### Responsive Testing
+- [ ] Mobile (375px)
+- [ ] Tablet (768px)
+- [ ] Desktop (1024px)
+
+### Blockers
+<!-- Any blockers encountered -->
+
+### Next Action
+<!-- What needs to happen next, or null if complete -->
+
+---
+
+## QA
+
+| Field | Value |
+|-------|-------|
+| **Status** | `PENDING` |
+| **Completion Signal** | `false` |
+| **Started** | - |
+| **Completed** | - |
+| **Depends On** | Backend, Frontend |
+| **Decision** | - |
+
+### Testing Phases
+- [ ] Phase 1: API Testing
+- [ ] Phase 2: UI Testing
+- [ ] Phase 3: Automated Tests
+- [ ] Phase 4: Code Quality
+- [ ] Phase 5: Acceptance Criteria
+
+### Findings Summary
+| Severity | Count |
+|----------|-------|
+| Critical | 0 |
+| Major | 0 |
+| Minor | 0 |
+
+### Acceptance Criteria
+| Criterion | Status | Evidence |
+|-----------|--------|----------|
+| - | - | - |
+
+### Decision
+<!-- APPROVED or REJECTED with reasoning -->
+
+### Next Action
+<!-- What needs to happen next, or null if complete -->
+
+---
+
+## Status Reference
+
+### Valid Statuses
+- `PENDING` - Not started
+- `IN_PROGRESS` - Currently working
+- `BLOCKED` - Cannot proceed (document blocker)
+- `WAITING_API` - Frontend waiting for backend API
+- `COMPLETED` - Finished successfully
+- `APPROVED` - QA approved
+- `REJECTED` - QA rejected (list issues)
+
+### Completion Signal
+- `true` - Role has finished all work
+- `false` - Role still has work to do
+
+### Workflow Trigger Conditions
+- **Backend/Frontend start**: Planner.completion_signal == true
+- **QA start**: Backend.completion_signal == true AND Frontend.completion_signal == true
+- **Feature done**: QA.status == APPROVED
+
+---
+
+## Session Resume Info
+
+> Fill this when ending a session to help resume later
+
+### Last Session
+| Field | Value |
+|-------|-------|
+| **Role** | - |
+| **Date** | - |
+| **Last Checkpoint** | - |
+| **Context Status** | Fresh / Partial / Full |
+
+### Resume Instructions
+<!-- What to read and do when resuming -->
+
+### Important Context
+<!-- Key decisions or facts to remember -->

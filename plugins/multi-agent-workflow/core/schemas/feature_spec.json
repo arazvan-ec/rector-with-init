@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workflow.local/schemas/feature_spec.json",
+  "title": "Feature Specification",
+  "description": "Schema for validating feature specification YAML files",
+  "type": "object",
+  "required": ["version", "feature", "objective", "requirements"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Schema version (e.g., '1.0')"
+    },
+    "feature": {
+      "type": "object",
+      "required": ["id", "name", "priority", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Unique feature identifier (kebab-case)"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 100,
+          "description": "Human-readable feature name"
+        },
+        "priority": {
+          "enum": ["critical", "high", "medium", "low"],
+          "description": "Feature priority level"
+        },
+        "status": {
+          "enum": ["planning", "in_progress", "review", "completed", "blocked"],
+          "description": "Current feature status"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "string",
+          "format": "date",
+          "description": "Creation date (YYYY-MM-DD)"
+        },
+        "author": {
+          "type": "string",
+          "description": "Spec author (role or name)"
+        },
+        "estimated_effort": {
+          "type": "string",
+          "description": "Estimated effort (e.g., '2-3 weeks')"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Feature tags for categorization"
+        }
+      }
+    },
+    "objective": {
+      "type": "object",
+      "required": ["summary"],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 10,
+          "description": "Brief description of the feature"
+        },
+        "business_value": {
+          "type": "string",
+          "description": "Business value and impact"
+        },
+        "success_metrics": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Measurable success criteria"
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "properties": {
+        "functional": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/requirement"},
+          "description": "Functional requirements"
+        },
+        "non_functional": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nfr"},
+          "description": "Non-functional requirements"
+        }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "properties": {
+        "internal": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/internal_contract"},
+          "description": "Internal API contracts"
+        },
+        "api": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/api_contract"},
+          "description": "External API contracts"
+        }
+      }
+    },
+    "tasks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {"$ref": "#/$defs/task"}
+      },
+      "description": "Tasks grouped by role (backend, frontend, qa)"
+    },
+    "phases": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/phase"},
+      "description": "Implementation phases"
+    }
+  },
+  "$defs": {
+    "requirement": {
+      "type": "object",
+      "required": ["id", "title", "description", "priority", "acceptance_criteria"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^FR-\\d{3}$",
+          "description": "Functional requirement ID (FR-XXX)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Short requirement title"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description"
+        },
+        "priority": {
+          "enum": ["critical", "high", "medium", "low"]
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1,
+          "description": "Acceptance criteria"
+        },
+        "test_coverage": {
+          "enum": ["required", "recommended", "optional"],
+          "default": "recommended"
+        }
+      }
+    },
+    "nfr": {
+      "type": "object",
+      "required": ["id", "type", "requirement"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^NFR-\\d{3}$",
+          "description": "Non-functional requirement ID (NFR-XXX)"
+        },
+        "type": {
+          "enum": ["performance", "reliability", "security", "usability", "scalability", "maintainability"]
+        },
+        "requirement": {
+          "type": "string",
+          "description": "The NFR statement"
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "required": ["id", "title", "acceptance_criteria", "done_when"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z]{2,3}-\\d{3}$",
+          "description": "Task ID (e.g., BE-001, FE-002, QA-001)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Task title"
+        },
+        "reference": {
+          "type": "string",
+          "description": "Reference to requirement or document"
+        },
+        "methodology": {
+          "enum": ["TDD", "BDD", "standard"],
+          "default": "TDD"
+        },
+        "max_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "done_when": {
+          "type": "string",
+          "description": "Clear completion criteria"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Task dependencies (task IDs)"
+        }
+      }
+    },
+    "internal_contract": {
+      "type": "object",
+      "required": ["name", "type", "interface"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Contract name"
+        },
+        "type": {
+          "enum": ["bash", "python", "node", "go", "rust"],
+          "description": "Implementation language"
+        },
+        "interface": {
+          "type": "string",
+          "description": "Interface definition"
+        }
+      }
+    },
+    "api_contract": {
+      "type": "object",
+      "required": ["endpoint", "method", "responses"],
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "pattern": "^/.*$",
+          "description": "API endpoint path"
+        },
+        "method": {
+          "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        },
+        "request": {
+          "type": "object",
+          "properties": {
+            "headers": {"type": "object"},
+            "body": {"type": "object"},
+            "query": {"type": "object"}
+          }
+        },
+        "responses": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "description": {"type": "string"},
+              "body": {"type": "object"}
+            }
+          }
+        }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "required": ["name", "deliverables"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Phase name"
+        },
+        "duration": {
+          "type": "string",
+          "description": "Estimated duration"
+        },
+        "deliverables": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

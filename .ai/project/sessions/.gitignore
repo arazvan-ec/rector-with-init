@@ -1,0 +1,4 @@
+# Session state files (runtime generated)
+port_allocations.json
+*.json
+!.gitkeep

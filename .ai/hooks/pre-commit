@@ -1,0 +1,137 @@
+#!/bin/bash
+
+# pre-commit hook - Valida workflows y estado antes de permitir commits
+#
+# Este hook se ejecuta automáticamente antes de cada commit
+#
+# Para instalar:
+#   cp hooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+#
+# Para saltarlo (NO recomendado):
+#   git commit --no-verify
+
+set -e
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+info() { echo -e "${BLUE}ℹ${NC} $1"; }
+success() { echo -e "${GREEN}✓${NC} $1"; }
+error() { echo -e "${RED}✗${NC} $1"; }
+warn() { echo -e "${YELLOW}⚠${NC} $1"; }
+
+echo ""
+info "Running pre-commit validation..."
+
+# Get list of files to be committed
+STAGED_FILES=$(git diff --cached --name-only)
+
+if [ -z "$STAGED_FILES" ]; then
+    warn "No files staged for commit"
+    exit 0
+fi
+
+# Check if any workflow files are being modified
+WORKFLOW_FILES=$(echo "$STAGED_FILES" | grep -E "workflows/.*\.yaml$" || true)
+STATE_FILES=$(echo "$STAGED_FILES" | grep -E "50_state\.md$" || true)
+RULE_FILES=$(echo "$STAGED_FILES" | grep -E "rules/.*\.md$" || true)
+
+# Validation 1: Check YAML syntax for workflow files
+if [ -n "$WORKFLOW_FILES" ]; then
+    info "Validating YAML files..."
+    for file in $WORKFLOW_FILES; do
+        if [ -f "$file" ]; then
+            if python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
+                success "Valid YAML: $file"
+            else
+                error "Invalid YAML syntax in: $file"
+                exit 1
+            fi
+        fi
+    done
+fi
+
+# Validation 2: Check state file format
+if [ -n "$STATE_FILES" ]; then
+    info "Validating state files..."
+    for file in $STATE_FILES; do
+        if [ -f "$file" ]; then
+            # Check required sections
+            REQUIRED_SECTIONS=("Planner" "Backend" "Frontend" "QA")
+            for section in "${REQUIRED_SECTIONS[@]}"; do
+                if ! grep -q "## .*$section" "$file"; then
+                    error "Missing section in $file: $section"
+                    exit 1
+                fi
+            done
+
+            # Check that Status lines exist
+            STATUS_COUNT=$(grep -c "^\*\*Status\*\*:" "$file" || true)
+            if [ "$STATUS_COUNT" -lt 4 ]; then
+                error "Missing Status lines in $file (expected 4, found $STATUS_COUNT)"
+                exit 1
+            fi
+
+            success "Valid state file: $file"
+        fi
+    done
+fi
+
+# Validation 3: Check that no secrets are being committed
+info "Checking for secrets..."
+SECRETS_PATTERNS=(
+    "password.*=.*"
+    "api_key.*=.*"
+    "secret.*=.*"
+    "token.*=.*"
+    "AWS_ACCESS_KEY"
+    "PRIVATE_KEY"
+)
+
+for pattern in "${SECRETS_PATTERNS[@]}"; do
+    if echo "$STAGED_FILES" | xargs grep -i -E "$pattern" 2>/dev/null | grep -v "^#" | grep -v "example" | head -1; then
+        error "Potential secret found in staged files!"
+        warn "Pattern matched: $pattern"
+        echo ""
+        echo "If this is intentional, commit with --no-verify (NOT recommended)"
+        exit 1
+    fi
+done
+
+success "No secrets detected"
+
+# Validation 4: Check .env files are not committed
+if echo "$STAGED_FILES" | grep -q "\.env$"; then
+    error "Attempting to commit .env file!"
+    warn ".env files should NEVER be committed"
+    echo ""
+    echo "To fix:"
+    echo "  git reset HEAD .env"
+    echo "  echo '.env' >> .gitignore"
+    exit 1
+fi
+
+# Validation 5: Run full workflow validation if validator exists
+if [ -f "./.ai/scripts/validate_workflow.py" ]; then
+    info "Running workflow validator..."
+    if python3 ./.ai/scripts/validate_workflow.py 2>&1 | tail -10; then
+        success "Workflow validation passed"
+    else
+        error "Workflow validation failed!"
+        echo ""
+        warn "Fix validation errors before committing"
+        exit 1
+    fi
+fi
+
+# All validations passed
+echo ""
+success "All pre-commit validations passed!"
+echo ""
+
+exit 0

@@ -1,0 +1,166 @@
+# =============================================================================
+# Business Rule Specification Template
+# =============================================================================
+# This template defines the structure for business rule specifications extracted
+# from project code. Business rules encode domain logic, validation constraints,
+# authorization rules, and workflow behaviors.
+#
+# Usage:
+#   1. Replace all {{VARIABLE}} placeholders with actual values
+#   2. Remove any optional sections that don't apply
+#   3. Validate against business_rule_spec.json schema
+#
+# Required fields: rule_id, name, description, last_extracted
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# RULE IDENTIFICATION
+# -----------------------------------------------------------------------------
+
+# Unique identifier for the rule (format: CATEGORY-NNN, e.g., "AUTH-001", "USER-002")
+rule_id: "{{RULE_ID}}"
+
+# Short, descriptive name for the rule
+name: "{{RULE_NAME}}"
+
+# Full description of what this business rule does
+description: "{{RULE_DESCRIPTION}}"
+
+# -----------------------------------------------------------------------------
+# CLASSIFICATION
+# -----------------------------------------------------------------------------
+
+# Category of the business rule
+# Options: validation, authorization, calculation, state_transition,
+#          constraint, workflow, integration, security, data_integrity
+category: "{{RULE_CATEGORY}}"
+
+# Importance level of the rule
+# Options: critical, high, medium, low
+severity: "{{SEVERITY}}"
+
+# How strictly the rule is enforced
+# Options: strict (blocks action), warning (logs but allows), advisory (informational)
+enforcement: "{{ENFORCEMENT}}"
+
+# -----------------------------------------------------------------------------
+# METADATA
+# -----------------------------------------------------------------------------
+
+# Timestamp of when this spec was last extracted/updated (ISO 8601 format)
+last_extracted: "{{EXTRACTION_TIMESTAMP}}"
+
+# Confidence level of the extraction (e.g., "95%", "80%")
+confidence: "{{CONFIDENCE_PERCENTAGE}}"
+
+# -----------------------------------------------------------------------------
+# ENTITIES AFFECTED
+# -----------------------------------------------------------------------------
+# List of entity names that this rule applies to
+entities_affected:
+  - "{{ENTITY_1}}"
+  - "{{ENTITY_2}}"
+
+# -----------------------------------------------------------------------------
+# CONDITIONS
+# -----------------------------------------------------------------------------
+# Define when this rule is triggered
+conditions:
+  # Natural language description of when the rule applies
+  when: "{{WHEN_DESCRIPTION}}"
+
+  # List of conditions that must ALL be true for the rule to trigger
+  if:
+    - "{{CONDITION_1}}"
+    - "{{CONDITION_2}}"
+    - "{{CONDITION_3}}"
+
+  # Exceptions to the rule (rule does NOT apply if any of these are true)
+  unless:
+    - "{{EXCEPTION_1}}"
+    - "{{EXCEPTION_2}}"
+
+# -----------------------------------------------------------------------------
+# ACTION
+# -----------------------------------------------------------------------------
+# What happens when the rule is triggered
+action:
+  # Action type: allow, deny, validate, transform, notify, calculate
+  type: "{{ACTION_TYPE}}"
+
+  # Description of the action taken
+  description: "{{ACTION_DESCRIPTION}}"
+
+  # Error message shown when rule violation occurs (for deny/validate types)
+  error_message: "{{ERROR_MESSAGE}}"
+
+# -----------------------------------------------------------------------------
+# IMPLEMENTATION
+# -----------------------------------------------------------------------------
+# Where and how the rule is implemented in code
+implementation:
+  # Architecture layer: domain, application, infrastructure, presentation
+  layer: "{{IMPLEMENTATION_LAYER}}"
+
+  # Files where this rule is implemented
+  files:
+    - "{{IMPLEMENTATION_FILE_1}}"
+    - "{{IMPLEMENTATION_FILE_2}}"
+
+  # Methods/functions that implement this rule
+  methods:
+    - "{{METHOD_1}}"
+    - "{{METHOD_2}}"
+
+  # Validator classes used (if applicable)
+  validators:
+    - "{{VALIDATOR_CLASS_1}}"
+    - "{{VALIDATOR_CLASS_2}}"
+
+# -----------------------------------------------------------------------------
+# EXAMPLES
+# -----------------------------------------------------------------------------
+# Examples of how this rule is applied
+examples:
+  # Passing scenario
+  - scenario: "{{SCENARIO_PASS}}"
+    input: "{{INPUT_PASS}}"
+    expected: "{{EXPECTED_PASS}}"
+
+  # Failing scenario
+  - scenario: "{{SCENARIO_FAIL}}"
+    input: "{{INPUT_FAIL}}"
+    expected: "{{EXPECTED_FAIL}}"
+
+  # Edge case scenario
+  - scenario: "{{SCENARIO_EDGE}}"
+    input: "{{INPUT_EDGE}}"
+    expected: "{{EXPECTED_EDGE}}"
+
+# -----------------------------------------------------------------------------
+# RELATED RULES
+# -----------------------------------------------------------------------------
+# IDs of other business rules that relate to this one
+# (may depend on, conflict with, or extend)
+related_rules:
+  - "{{RELATED_RULE_ID_1}}"
+  - "{{RELATED_RULE_ID_2}}"
+
+# -----------------------------------------------------------------------------
+# API ENDPOINTS AFFECTED
+# -----------------------------------------------------------------------------
+# API endpoints where this rule is enforced
+api_endpoints_affected:
+  - "{{ENDPOINT_1}}"
+  - "{{ENDPOINT_2}}"
+
+# -----------------------------------------------------------------------------
+# EXTRACTION METADATA
+# -----------------------------------------------------------------------------
+# Source files analyzed to extract this specification
+extracted_from:
+  - "{{SOURCE_FILE_1}}"
+  - "{{SOURCE_FILE_2}}"
+
+# Additional notes or context about this rule
+notes: "{{ADDITIONAL_NOTES}}"

@@ -1,0 +1,274 @@
+# Trust Model Configuration
+# Feature: workflow-improvements-2026 | Task: BE-006
+# Source: Addy Osmani's "70% Problem" framework
+#
+# This file defines trust levels for AI agent supervision.
+# Trust level determines auto-approval and supervision requirements.
+
+version: "1.0"
+
+# Default trust level when no pattern matches
+default_level: medium
+
+trust_levels:
+  # HIGH TRUST - AI can work autonomously
+  # Good for: tests, docs, boilerplate, simple CRUD
+  high:
+    description: "AI can work autonomously with minimal oversight"
+    auto_approve: true
+    supervision: "minimal"
+    max_consecutive_changes: 10
+    require_human_review: false
+
+    contexts:
+      # Test files
+      - pattern: "*.test.ts"
+        reason: "Test files are safe to auto-generate"
+      - pattern: "*.test.tsx"
+        reason: "React test files"
+      - pattern: "*.test.js"
+        reason: "JavaScript test files"
+      - pattern: "*.spec.ts"
+        reason: "Spec test files"
+      - pattern: "*.spec.js"
+        reason: "JavaScript spec files"
+      - pattern: "*Test.php"
+        reason: "PHP test files"
+      - pattern: "*_test.py"
+        reason: "Python test files"
+      - pattern: "test_*.py"
+        reason: "Python test files (prefix)"
+      - pattern: "tests/**/*"
+        reason: "All files in tests directory"
+
+      # Documentation
+      - pattern: "*.md"
+        reason: "Markdown documentation"
+      - pattern: "docs/**/*"
+        reason: "Documentation directory"
+      - pattern: "README*"
+        reason: "README files"
+      - pattern: "CHANGELOG*"
+        reason: "Changelog files"
+      - pattern: "LICENSE*"
+        reason: "License files"
+
+      # Configuration (non-sensitive)
+      - pattern: ".gitignore"
+        reason: "Git ignore rules"
+      - pattern: ".editorconfig"
+        reason: "Editor configuration"
+      - pattern: "tsconfig.json"
+        reason: "TypeScript configuration"
+      - pattern: "package.json"
+        reason: "Package manifest"
+      - pattern: "composer.json"
+        reason: "Composer manifest"
+
+      # Task types
+      - task_type: "boilerplate"
+        reason: "Repetitive code generation"
+      - task_type: "documentation"
+        reason: "Writing docs"
+      - task_type: "unit_tests"
+        reason: "Writing unit tests"
+      - task_type: "formatting"
+        reason: "Code formatting"
+      - task_type: "refactoring_simple"
+        reason: "Simple refactoring (rename, extract)"
+
+  # MEDIUM TRUST - AI works, human reviews
+  # Good for: features, APIs, UI components
+  medium:
+    description: "AI implements, human reviews before merge"
+    auto_approve: false
+    supervision: "code_review_required"
+    max_consecutive_changes: 5
+    require_human_review: true
+
+    contexts:
+      # Source code (non-sensitive)
+      - pattern: "src/**/*"
+        reason: "Source code requires review"
+        exclude:
+          - "**/security/**"
+          - "**/auth/**"
+          - "**/payment/**"
+      - pattern: "lib/**/*"
+        reason: "Library code"
+      - pattern: "app/**/*"
+        reason: "Application code"
+        exclude:
+          - "**/Security/**"
+          - "**/Auth/**"
+
+      # Frontend
+      - pattern: "components/**/*"
+        reason: "UI components"
+      - pattern: "pages/**/*"
+        reason: "Page components"
+      - pattern: "*.tsx"
+        reason: "React components"
+      - pattern: "*.vue"
+        reason: "Vue components"
+      - pattern: "*.svelte"
+        reason: "Svelte components"
+
+      # Backend (non-sensitive)
+      - pattern: "controllers/**/*"
+        reason: "Controllers"
+        exclude:
+          - "*Auth*"
+          - "*Security*"
+      - pattern: "services/**/*"
+        reason: "Services"
+        exclude:
+          - "*Auth*"
+          - "*Payment*"
+      - pattern: "repositories/**/*"
+        reason: "Repositories"
+
+      # Task types
+      - task_type: "feature_implementation"
+        reason: "New feature code"
+      - task_type: "api_endpoints"
+        reason: "API implementation"
+      - task_type: "ui_components"
+        reason: "UI development"
+      - task_type: "bug_fix"
+        reason: "Bug fixes need review"
+      - task_type: "refactoring_complex"
+        reason: "Complex refactoring"
+
+  # LOW TRUST - AI suggests, human implements/approves
+  # Good for: security, auth, payments, migrations, infrastructure
+  low:
+    description: "AI provides suggestions, human implements or closely supervises"
+    auto_approve: false
+    supervision: "pair_programming"
+    max_consecutive_changes: 1
+    require_human_review: true
+    escalation: true
+    notify_on_match: true
+
+    contexts:
+      # Security-related
+      - pattern: "**/*security*/**"
+        reason: "Security-critical code"
+      - pattern: "**/*Security*/**"
+        reason: "Security namespace"
+      - pattern: "**/security/**"
+        reason: "Security directory"
+      - pattern: "*Security*.php"
+        reason: "Security classes"
+      - pattern: "*security*.ts"
+        reason: "Security modules"
+
+      # Authentication
+      - pattern: "**/*auth*/**"
+        reason: "Authentication code"
+      - pattern: "**/*Auth*/**"
+        reason: "Auth namespace"
+      - pattern: "**/auth/**"
+        reason: "Auth directory"
+      - pattern: "*Auth*.php"
+        reason: "Auth classes"
+      - pattern: "*auth*.ts"
+        reason: "Auth modules"
+      - pattern: "**/login/**"
+        reason: "Login functionality"
+      - pattern: "**/session/**"
+        reason: "Session management"
+
+      # Payment/Financial
+      - pattern: "**/*payment*/**"
+        reason: "Payment processing"
+      - pattern: "**/*Payment*/**"
+        reason: "Payment namespace"
+      - pattern: "**/billing/**"
+        reason: "Billing code"
+      - pattern: "**/stripe/**"
+        reason: "Stripe integration"
+      - pattern: "**/paypal/**"
+        reason: "PayPal integration"
+      - pattern: "**/checkout/**"
+        reason: "Checkout flow"
+
+      # Credentials/Secrets
+      - pattern: "**/*credential*/**"
+        reason: "Credential handling"
+      - pattern: "**/*secret*/**"
+        reason: "Secrets management"
+      - pattern: ".env*"
+        reason: "Environment variables"
+      - pattern: "*.pem"
+        reason: "Certificate files"
+      - pattern: "*.key"
+        reason: "Key files"
+      - pattern: "**/config/secrets*"
+        reason: "Secret configuration"
+
+      # Infrastructure
+      - pattern: "docker-compose*.yml"
+        reason: "Docker configuration"
+      - pattern: "Dockerfile*"
+        reason: "Docker build"
+      - pattern: "**/terraform/**"
+        reason: "Infrastructure as code"
+      - pattern: "**/kubernetes/**"
+        reason: "K8s configuration"
+      - pattern: "**/.github/workflows/**"
+        reason: "CI/CD pipelines"
+
+      # Database migrations
+      - pattern: "**/migrations/**"
+        reason: "Database migrations"
+      - pattern: "**/migrate/**"
+        reason: "Migration scripts"
+
+      # Task types
+      - task_type: "security"
+        reason: "Security-related work"
+      - task_type: "authentication"
+        reason: "Auth implementation"
+      - task_type: "authorization"
+        reason: "Permissions/roles"
+      - task_type: "payment"
+        reason: "Payment processing"
+      - task_type: "migration"
+        reason: "Data/schema migrations"
+      - task_type: "infrastructure"
+        reason: "Infra changes"
+      - task_type: "deployment"
+        reason: "Deployment configuration"
+      - task_type: "cryptography"
+        reason: "Crypto operations"
+
+# Escalation rules
+escalation:
+  # Who to notify when low-trust code is modified
+  notify:
+    - role: "planner"
+      reason: "Architectural oversight"
+    - role: "human"
+      reason: "Human review required"
+
+  # Actions to take
+  actions:
+    - log_to_decisions: true
+    - require_explicit_approval: true
+    - block_auto_commit: true
+
+# Override rules (for specific situations)
+overrides:
+  # Allow specific low-trust files to be medium trust
+  elevate_to_medium:
+    - pattern: "**/auth/README.md"
+      reason: "Documentation is safe"
+    - pattern: "**/security/tests/**"
+      reason: "Security tests are safe"
+
+  # Force specific files to low trust even if they match high patterns
+  demote_to_low:
+    - pattern: "**/*.env.example"
+      reason: "Example env files might contain patterns"

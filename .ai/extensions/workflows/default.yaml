@@ -1,0 +1,884 @@
+name: "Default Feature Workflow"
+version: "1.0"
+description: "Standard workflow for feature development: Planning → Backend → Frontend → QA"
+
+metadata:
+  project: PROJECT_X
+  created: "2026-01-15"
+  updated: "2026-01-16"
+  changes: "Added blocking checkpoints with auto-correction loop (Ralph Wiggum Pattern)"
+
+roles:
+  - id: planner
+    name: Planner / Architect
+    role_file: .ai/workflow/roles/planner.md
+
+  - id: backend
+    name: Backend Engineer
+    role_file: .ai/workflow/roles/backend.md
+
+  - id: frontend
+    name: Frontend Engineer
+    role_file: .ai/workflow/roles/frontend.md
+
+  - id: qa
+    name: QA / Reviewer
+    role_file: .ai/workflow/roles/qa.md
+
+stages:
+  - id: planning
+    name: "Planning & Definition"
+    role: planner
+    description: "Define feature, create contracts, breakdown tasks"
+    workspace: "./.ai/project/features/{FEATURE_ID}/"
+
+    inputs:
+      - User requirements
+      - Business context
+
+    outputs:
+      - FEATURE_X.md (feature definition)
+      - 30_tasks.md (task breakdown)
+      - 50_state.md (planner section)
+
+    rules:
+      - Read: .ai/workflow/roles/planner.md
+      - Read: .ai/workflow/rules/global_rules.md
+      - Read: .ai/workflow/rules/ddd_rules.md
+      - Read: .ai/workflow/rules/project_specific.md
+
+    completion_criteria:
+      - FEATURE_X.md exists with objective, acceptance criteria, API contracts
+      - 30_tasks.md exists with tasks for backend, frontend, qa
+      - 50_state.md (planner) status is COMPLETED
+
+    dependencies: []
+    parallel_with: []
+
+  - id: backend_implementation
+    name: "Backend Implementation"
+    role: backend
+    description: "Implement API according to contracts defined in planning"
+    workspace: "./backend/src/"
+
+    inputs:
+      - FEATURE_X.md (from planning)
+      - 30_tasks.md (backend tasks)
+      - API contracts
+
+    outputs:
+      - Backend code (./backend/src/)
+      - Tests (./backend/tests/)
+      - 50_state.md (backend section)
+
+    rules:
+      - Read: .ai/workflow/roles/backend.md
+      - Read: .ai/workflow/rules/global_rules.md
+      - Read: .ai/workflow/rules/ddd_rules.md
+      - Read: .ai/workflow/rules/project_specific.md
+      - Write: ./backend/src/**
+      - Write: ./backend/tests/**
+      - Write: 50_state.md (backend section only)
+
+    reference_files:
+      - Find similar features in ./backend/src/ to use as patterns
+      - Example DDD structure: Look for existing Domain/Application/Infrastructure layers
+      - API controller examples: Existing controllers in src/Infrastructure/HTTP/Controller/
+      - Repository examples: Existing repos in src/Infrastructure/Persistence/Repository/
+
+    verification_steps:
+      required:
+        - "Run unit tests: `php bin/phpunit tests/Unit/` - Show results"
+        - "Run integration tests: `php bin/phpunit tests/Integration/ --group=integration`"
+        - "Check coverage: `php bin/phpunit --coverage-text` - Must be > 80%"
+        - "Test API endpoint: `curl -X POST localhost:8000/api/[endpoint]` - Show request/response"
+        - "Validate schema: `php bin/console doctrine:schema:validate` - Must pass"
+        - "Run linter: `./vendor/bin/php-cs-fixer fix --dry-run` - Must pass"
+
+      # BLOCKING CHECKPOINTS (Ralph Wiggum Pattern)
+      # Each checkpoint MUST pass before proceeding to the next
+      # Uses auto-correction loop: iterate until tests pass (max 10 iterations)
+      checkpoints:
+        - name: domain_layer
+          description: "Domain entities, value objects, and domain services"
+          blocker: true
+          max_iterations: 10
+          verify:
+            - command: "php bin/phpunit tests/Unit/Domain/"
+              expected: "exit_code == 0"
+              description: "All domain unit tests must pass"
+            - command: "grep -r '@ORM' backend/src/Domain/ || true"
+              expected: "no_output"
+              description: "No Doctrine annotations in Domain layer (DDD compliance)"
+          on_failure: |
+            If tests fail after 10 iterations:
+            1. Document in DECISIONS.md what was attempted
+            2. Update 50_state.md to BLOCKED
+            3. Wait for Planner assistance
+
+        - name: application_layer
+          description: "Use cases, application services, and DTOs"
+          blocker: true
+          max_iterations: 10
+          depends_on: [domain_layer]
+          verify:
+            - command: "php bin/phpunit tests/Unit/Application/"
+              expected: "exit_code == 0"
+              description: "All application unit tests must pass"
+            - command: "php bin/phpunit --coverage-text --filter=Application | grep -E 'Lines:.*%'"
+              expected: "coverage >= 80%"
+              description: "Coverage must be >= 80%"
+          on_failure: |
+            If tests fail after 10 iterations:
+            1. Document in DECISIONS.md what was attempted
+            2. Update 50_state.md to BLOCKED
+            3. Wait for Planner assistance
+
+        - name: infrastructure_layer
+          description: "Repositories, controllers, and external services"
+          blocker: true
+          max_iterations: 10
+          depends_on: [application_layer]
+          verify:
+            - command: "php bin/phpunit tests/Integration/"
+              expected: "exit_code == 0"
+              description: "All integration tests must pass"
+            - command: "php bin/console doctrine:schema:validate"
+              expected: "exit_code == 0"
+              description: "Database schema must be valid"
+          on_failure: |
+            If tests fail after 10 iterations:
+            1. Document in DECISIONS.md what was attempted
+            2. Update 50_state.md to BLOCKED
+            3. Wait for Planner assistance
+
+        - name: api_endpoints
+          description: "REST API endpoints and contracts"
+          blocker: true
+          max_iterations: 10
+          depends_on: [infrastructure_layer]
+          verify:
+            - command: "curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/[endpoint]"
+              expected: "http_code in [200, 201, 400, 401, 404]"
+              description: "API endpoint responds correctly"
+            - command: "php bin/phpunit --coverage-text | grep -E 'Lines:.*%'"
+              expected: "total_coverage >= 80%"
+              description: "Total coverage must be >= 80%"
+          on_failure: |
+            If tests fail after 10 iterations:
+            1. Document in DECISIONS.md what was attempted
+            2. Update 50_state.md to BLOCKED
+            3. Wait for Planner assistance
+
+    completion_criteria:
+      - All backend tasks in 30_tasks.md are completed
+      - Tests written and passing (coverage > 80%)
+      - API endpoints implement contracts from FEATURE_X.md
+      - 50_state.md (backend) status is COMPLETED
+      - Code follows DDD architecture
+
+    dependencies: [planning]
+    parallel_with: []  # Can be [frontend_implementation] if mocking is ok
+
+  - id: frontend_implementation
+    name: "Frontend Implementation"
+    role: frontend
+    description: "Implement UI, can mock API if backend not ready"
+    workspace: "./frontend1/src/"  # or frontend2
+
+    inputs:
+      - FEATURE_X.md (from planning)
+      - 30_tasks.md (frontend tasks)
+      - API contracts (to mock or consume)
+      - 50_state.md (backend section) - to check if API is ready
+
+    outputs:
+      - Frontend code (./frontend1/src/ or ./frontend2/src/)
+      - Tests (./frontend1/tests/)
+      - Mocks (if API not ready)
+      - 50_state.md (frontend section)
+
+    rules:
+      - Read: .ai/workflow/roles/frontend.md
+      - Read: .ai/workflow/rules/global_rules.md
+      - Read: .ai/workflow/rules/project_specific.md
+      - Write: ./frontend1/src/** (or frontend2)
+      - Write: ./frontend1/tests/**
+      - Write: 50_state.md (frontend section only)
+      - Can read backend 50_state.md to check API status
+
+    reference_files:
+      - Find similar components in ./frontend1/src/components/ to use as patterns
+      - Form examples: Look for existing form components (e.g., LoginForm, ProfileForm)
+      - API integration: Check existing API service files in ./frontend1/src/services/
+      - State management: Follow pattern in existing features
+      - Mock examples: Check __mocks__/ directory for API mock patterns
+
+    verification_steps:
+      required:
+        - "Run unit tests: `npm test` - Show results"
+        - "Run linter: `npm run lint` - Must pass"
+        - "Check TypeScript: `npm run type-check` - No errors"
+        - "Test in browser: Open localhost:3000, test user flow - Describe steps taken"
+        - "Test responsive: Check mobile (375px), tablet (768px), desktop (1024px)"
+        - "Check accessibility: Use browser DevTools Lighthouse audit - Score > 90"
+        - "Verify API calls: Open Network tab, verify requests/responses"
+
+      # BLOCKING CHECKPOINTS (Ralph Wiggum Pattern)
+      # Each checkpoint MUST pass before proceeding to the next
+      # Uses auto-correction loop: iterate until tests pass (max 10 iterations)
+      checkpoints:
+        - name: component_structure
+          description: "Component with props, state, and TypeScript types"
+          blocker: true
+          max_iterations: 10
+          verify:
+            - command: "npm run type-check"
+              expected: "exit_code == 0"
+              description: "No TypeScript errors"
+            - command: "npm test -- --testPathPattern=[ComponentName] --passWithNoTests"
+              expected: "exit_code == 0"
+              description: "Component tests pass"
+          on_failure: |
+            If tests fail after 10 iterations:
+            1. Document in DECISIONS.md what was attempted
+            2. Update 50_state.md to BLOCKED
+            3. Wait for Planner assistance
+
+        - name: form_logic
+          description: "Form validation, event handlers, and state management"
+          blocker: true
+          max_iterations: 10
+          depends_on: [component_structure]
+          verify:
+            - command: "npm test -- --testPathPattern=[FormName]"
+              expected: "exit_code == 0"
+              description: "Form validation tests pass"
+            - command: "npm run lint"
+              expected: "exit_code == 0"
+              description: "Linting passes"
+          on_failure: |
+            If tests fail after 10 iterations:
+            1. Document in DECISIONS.md what was attempted
+            2. Update 50_state.md to BLOCKED
+            3. Wait for Planner assistance
+
+        - name: api_integration
+          description: "API integration or mocks with error handling"
+          blocker: true
+          max_iterations: 10
+          depends_on: [form_logic]
+          verify:
+            - command: "npm test -- --testPathPattern=integration"
+              expected: "exit_code == 0"
+              description: "Integration tests pass"
+            - command: "npm test -- --coverage --coverageReporters=text | grep -E 'All files.*%'"
+              expected: "coverage >= 70%"
+              description: "Coverage must be >= 70%"
+          on_failure: |
+            If tests fail after 10 iterations:
+            1. Document in DECISIONS.md what was attempted
+            2. Update 50_state.md to BLOCKED
+            3. Wait for Planner assistance
+
+        - name: responsive_design
+          description: "Responsive at mobile (375px), tablet (768px), desktop (1024px)"
+          blocker: true
+          max_iterations: 10
+          depends_on: [api_integration]
+          verify:
+            - manual: "Visual inspection at 375px, 768px, 1024px"
+              expected: "UI renders correctly at all breakpoints"
+              description: "No horizontal scroll, proper layout at each size"
+          on_failure: |
+            If responsive issues persist after 10 iterations:
+            1. Document in DECISIONS.md what was attempted
+            2. Include screenshots of issues
+            3. Update 50_state.md to BLOCKED
+            4. Wait for Planner assistance
+
+        - name: accessibility_audit
+          description: "Lighthouse accessibility score >= 90"
+          blocker: true
+          max_iterations: 10
+          depends_on: [responsive_design]
+          verify:
+            - manual: "Run Lighthouse audit in Chrome DevTools"
+              expected: "accessibility_score >= 90"
+              description: "Accessibility score must be 90 or higher"
+            - manual: "Keyboard navigation test"
+              expected: "all_elements_focusable"
+              description: "All interactive elements reachable via keyboard"
+          on_failure: |
+            If accessibility issues persist after 10 iterations:
+            1. Document in DECISIONS.md what was attempted
+            2. Include Lighthouse report
+            3. Update 50_state.md to BLOCKED
+            4. Wait for Planner assistance
+
+    completion_criteria:
+      - All frontend tasks in 30_tasks.md are completed
+      - Tests written and passing (coverage > 70%)
+      - UI implements requirements from FEATURE_X.md
+      - All verification steps completed successfully
+      - 50_state.md (frontend) status is COMPLETED or WAITING_API
+      - Responsive and accessible (Lighthouse score > 90)
+
+    dependencies: [planning]  # Only depends on planning, not backend
+    parallel_with: [backend_implementation]  # Can work in parallel
+
+    notes: |
+      Frontend can start immediately after planning by mocking the API.
+      If backend is not ready, set status to WAITING_API and continue with mocks.
+      Once backend is COMPLETED, replace mocks with real API integration.
+
+  - id: integration
+    name: "API Integration"
+    role: frontend
+    description: "Replace mocks with real API (if mocked)"
+    workspace: "./frontend1/src/"
+
+    inputs:
+      - Backend API (from backend_implementation)
+      - Mocked frontend code
+
+    outputs:
+      - Frontend code with real API integration
+      - 50_state.md (frontend section updated)
+
+    rules:
+      - Read: .ai/workflow/roles/frontend.md
+      - Write: ./frontend1/src/**
+      - Write: 50_state.md (frontend section)
+
+    completion_criteria:
+      - Mocks removed, using real API
+      - Integration tests pass
+      - 50_state.md (frontend) status is COMPLETED
+
+    dependencies: [backend_implementation, frontend_implementation]
+    parallel_with: []
+
+    notes: |
+      This stage only applies if frontend was using mocks.
+      If frontend waited for backend to complete, skip this stage.
+
+  - id: qa_review
+    name: "QA Review & Validation"
+    role: qa
+    description: "Review implementation, run tests, validate against acceptance criteria"
+    workspace: "./"
+
+    inputs:
+      - All code (backend + frontend)
+      - FEATURE_X.md (acceptance criteria)
+      - All tests
+
+    outputs:
+      - qa_report_FEATURE_X.md (QA report)
+      - 50_state.md (qa section)
+      - Issue reports (if any)
+
+    rules:
+      - Read: .ai/workflow/roles/qa.md
+      - Read: .ai/workflow/rules/global_rules.md
+      - Read: .ai/workflow/rules/ddd_rules.md
+      - Read: .ai/workflow/rules/project_specific.md
+      - Read: All code (backend/src/, frontend*/src/)
+      - Write: qa_report_FEATURE_X.md
+      - Write: 50_state.md (qa section only)
+
+    completion_criteria:
+      - All code reviewed
+      - All tests executed (unit, integration, e2e)
+      - Acceptance criteria validated
+      - QA report created
+      - 50_state.md (qa) status is APPROVED or REJECTED
+
+    dependencies: [integration]  # or [backend_implementation, frontend_implementation] if no integration needed
+    parallel_with: []
+
+    notes: |
+      QA can APPROVE or REJECT.
+      If REJECTED, backend/frontend must fix issues and QA reviews again.
+
+validation:
+  required_files:
+    - FEATURE_X.md
+    - 30_tasks.md
+    - 50_state.md
+
+  required_sections_in_state:
+    - planner
+    - backend
+    - frontend
+    - qa
+
+  required_status_flow:
+    - planner: [PENDING, IN_PROGRESS, COMPLETED]
+    - backend: [PENDING, IN_PROGRESS, BLOCKED, COMPLETED]
+    - frontend: [PENDING, IN_PROGRESS, BLOCKED, WAITING_API, COMPLETED]
+    - qa: [PENDING, IN_PROGRESS, APPROVED, REJECTED]
+
+instructions:
+  planner: |
+    You are the PLANNER. Your role is defined in: .ai/workflow/roles/planner.md
+
+    PAIRING MODE (CRITICAL):
+    - You are like a senior architect who needs COMPLETE CONTEXT
+    - Don't create incomplete specs that leave engineers guessing
+    - Provide SPECIFIC contracts: exact request/response formats, error cases
+    - Reference existing features to maintain consistency
+    - Break down tasks with clear acceptance criteria
+
+    GIT WORKFLOW (CRITICAL):
+    0. BEFORE starting, sync with remote:
+       Run: ./.ai/workflow/scripts/git_sync.sh {FEATURE_ID}
+       OR: git pull origin feature/{FEATURE_ID}
+
+    MANDATORY READING (in order):
+    1. Read .ai/workflow/roles/planner.md (your role) - **Includes Pairing Patterns section**
+    2. Read .ai/workflow/rules/global_rules.md
+    3. Read .ai/workflow/rules/ddd_rules.md
+    4. Read .ai/workflow/rules/project_specific.md
+    5. Read this workflow file (default.yaml)
+
+    FIND REFERENCE FEATURES (MANDATORY):
+    6. Before planning, FIND similar existing features:
+       - Look in ./.ai/project/features/ for similar features
+       - Check FEATURE_*.md files for similar API patterns
+       - State which feature you're using as reference for consistency
+
+    TASK WITH COMPLETE SPECIFICATIONS:
+    7. Create FEATURE_X.md with COMPLETE details:
+       - Objective (what and why)
+       - User stories (who, what, benefit)
+       - Acceptance criteria (specific, testable)
+       - API contracts with FULL specifications:
+         * Complete request format (all fields with types)
+         * Complete response format (success case)
+         * All error responses (400, 401, 404, 500)
+         * Example request/response for each endpoint
+       - Technical considerations (DDD layers, dependencies)
+       - Non-functional requirements (performance, security)
+
+    8. Create 30_tasks.md with SPECIFIC, ACTIONABLE tasks:
+       - Backend tasks with DDD layers specified (Domain, Application, Infrastructure)
+       - Frontend tasks with components and integration points
+       - QA tasks with specific test scenarios
+       - Each task has clear acceptance criteria
+
+    9. Verify your specifications are complete:
+       - Can a backend engineer implement the API without asking questions?
+       - Are all error cases documented?
+       - Are all fields typed and described?
+       - Are acceptance criteria testable?
+
+    10. Update 50_state.md (planner section) to COMPLETED when done
+
+    GIT COMMIT & PUSH (MANDATORY):
+    11. After completing all tasks above, you MUST commit and push:
+        Run: ./.ai/workflow/scripts/git_commit_push.sh planner {FEATURE_ID} "Define feature and create task breakdown"
+        OR manually:
+          git add .
+          git commit -m "[planner][{FEATURE_ID}] Define feature and create task breakdown"
+          git push origin feature/{FEATURE_ID}
+
+    IMPORTANT REMINDERS:
+    - Other roles are waiting for your changes. Push immediately after completing.
+    - Incomplete specs = blocked engineers = wasted time
+    - Reference similar features for consistency
+    - Specify EVERYTHING: requests, responses, errors, validation rules
+
+    SUCCESS CRITERIA:
+    - FEATURE_X.md has complete API contracts (no guessing required)
+    - 30_tasks.md has specific tasks with acceptance criteria
+    - All error cases documented
+    - References to similar features included
+    - Engineers can implement without asking clarifying questions
+
+    DO NOT implement code. Only plan and define.
+
+  backend: |
+    You are the BACKEND ENGINEER. Your role is defined in: .ai/workflow/roles/backend.md
+
+    PAIRING MODE (CRITICAL):
+    - You are like a 10x colleague who needs CLEAR DIRECTION
+    - Don't generate code faster than it can be verified
+    - Include verification steps in EVERYTHING you do
+    - Reference existing code patterns
+    - Break work into checkpoints
+
+    GIT WORKFLOW (CRITICAL):
+    0. BEFORE starting, sync with remote:
+       Run: ./.ai/workflow/scripts/git_sync.sh {FEATURE_ID}
+       This will pull planner's changes (FEATURE_X.md, 30_tasks.md, etc.)
+
+    MANDATORY READING (in order):
+    1. Read .ai/workflow/roles/backend.md (your role) - **Includes Pairing Patterns section**
+    2. Read .ai/workflow/rules/global_rules.md
+    3. Read .ai/workflow/rules/ddd_rules.md
+    4. Read .ai/workflow/rules/project_specific.md
+    5. Read FEATURE_X.md (what you need to implement)
+    6. Read 30_tasks.md (your tasks)
+    7. Read 50_state.md (planner section) to ensure planning is COMPLETED
+
+    FIND REFERENCE CODE (MANDATORY):
+    8. Before implementing, FIND similar existing code to use as pattern:
+       - Look in ./backend/src/ for similar features
+       - Example: If implementing User, look for existing entities
+       - State which file you're using as reference
+
+    IMPLEMENT WITH CHECKPOINTS (MANDATORY):
+    9. Break implementation into verifiable steps:
+
+       Checkpoint 1: Domain Layer
+       - Create entities and value objects
+       - STOP: Show code, verify DDD compliance (no Doctrine annotations)
+       - Run: Unit tests for entities
+       - Verification: php bin/phpunit tests/Unit/Domain/
+
+       Checkpoint 2: Application Layer
+       - Create Use Cases with DTOs
+       - STOP: Show use case, verify business logic
+       - Run: Unit tests for use cases
+       - Verification: php bin/phpunit tests/Unit/Application/
+
+       Checkpoint 3: Infrastructure Layer
+       - Create repositories (Doctrine implementation)
+       - Create controllers (API endpoints)
+       - STOP: Show implementations
+       - Run: Integration tests
+       - Verification: php bin/phpunit tests/Integration/ --group=integration
+
+       Checkpoint 4: API Testing
+       - Test endpoints with curl
+       - Show: Request/response examples
+       - Verification: curl -X POST localhost:8000/api/[endpoint] -d '[data]'
+
+    VERIFICATION (MANDATORY):
+    10. After EACH checkpoint, provide verification:
+        - Exact command to run
+        - Expected output
+        - What to check
+        Example: "Run: php bin/phpunit tests/Unit/UserTest.php
+                 Expected: 5 tests, all passing
+                 Shows: User entity validates email correctly"
+
+    TESTING (MANDATORY):
+    11. Write tests BEFORE marking checkpoint as complete
+        - Unit tests for all Domain and Application logic
+        - Integration tests for Infrastructure (database, API)
+        - Coverage must be > 80%
+        - Show: php bin/phpunit --coverage-text
+
+    GIT COMMIT & PUSH (MANDATORY - FREQUENT):
+    12. After EACH checkpoint (NOT at the end):
+        Run: ./.ai/workflow/scripts/git_commit_push.sh backend {FEATURE_ID} "Implement [what you did]"
+
+        Examples:
+        - "./.ai/workflow/scripts/git_commit_push.sh backend user-auth 'Add User entity and Email value object'"
+        - "./.ai/workflow/scripts/git_commit_push.sh backend user-auth 'Add RegisterUserUseCase with validation'"
+        - "./.ai/workflow/scripts/git_commit_push.sh backend user-auth 'Add UserRepository with Doctrine'"
+        - "./.ai/workflow/scripts/git_commit_push.sh backend user-auth 'Add POST /api/users endpoint'"
+
+    13. When ALL checkpoints done:
+        - Update 50_state.md (backend section) status to COMPLETED
+        - Run: ./.ai/workflow/scripts/git_commit_push.sh backend {FEATURE_ID} "Complete backend implementation"
+
+    IMPORTANT REMINDERS:
+    - Reference existing code patterns (state which file)
+    - Stop at each checkpoint for verification
+    - Run tests and show results (don't just say "tests pass")
+    - Commit after each checkpoint (not just at the end)
+    - Frontend is waiting for your API
+    - If blocked, update 50_state.md to BLOCKED and push immediately
+
+    SUCCESS CRITERIA:
+    - All checkpoints completed with passing tests
+    - Code follows DDD architecture
+    - API matches contracts in FEATURE_X.md
+    - Coverage > 80%
+    - All verification steps executed successfully
+
+  frontend: |
+    You are the FRONTEND ENGINEER. Your role is defined in: .ai/workflow/roles/frontend.md
+
+    PAIRING MODE (CRITICAL):
+    - You are like a 10x UI engineer who needs VISUAL VERIFICATION
+    - Don't build UI faster than it can be tested in browser
+    - Include screenshots and browser testing in everything you do
+    - Test responsive design at multiple breakpoints
+    - Verify accessibility (Lighthouse audit)
+    - Show actual API calls in Network tab
+
+    GIT WORKFLOW (CRITICAL):
+    0. BEFORE starting, sync with remote:
+       Run: ./.ai/workflow/scripts/git_sync.sh {FEATURE_ID}
+       This pulls planner's and backend's changes
+
+    MANDATORY READING (in order):
+    1. Read .ai/workflow/roles/frontend.md (your role) - **Includes Pairing Patterns section**
+    2. Read .ai/workflow/rules/global_rules.md
+    3. Read .ai/workflow/rules/project_specific.md
+    4. Read FEATURE_X.md (what you need to implement)
+    5. Read 30_tasks.md (your tasks)
+    6. Read 50_state.md (planner section) to ensure planning is COMPLETED
+    7. Read 50_state.md (backend section) to check if API is ready
+
+    FIND REFERENCE COMPONENTS (MANDATORY):
+    8. Before implementing, FIND similar existing components:
+       - Look in ./frontend1/src/components/ for similar UI patterns
+       - Check existing forms, lists, or pages
+       - State which component you're using as reference
+
+    TASK WITH CHECKPOINTS:
+    9. Check if backend API is ready (read backend 50_state.md)
+
+    10. If API NOT ready:
+        - Mock the API endpoints (reference existing mocks in __mocks__/)
+        - Set status to WAITING_API in your 50_state.md
+        - Continue with UI implementation
+        - Commit mocks: ./.ai/workflow/scripts/git_commit_push.sh frontend {FEATURE_ID} "Add API mocks"
+
+    11. If API is ready:
+        - Integrate with real API
+        - Set status to IN_PROGRESS
+
+    12. Implement with VISUAL VERIFICATION checkpoints:
+
+        Checkpoint 1: Component Structure
+        - Create component with props/state
+        - STOP: Show component code, explain structure
+        - Run: npm run type-check (no TypeScript errors)
+        - Verification: Component renders without errors
+
+        Checkpoint 2: Form/UI Logic
+        - Add form validation, event handlers
+        - STOP: Test in browser, show form behavior
+        - Test: Fill form, trigger validation errors
+        - Verification: Show screenshots of working form
+
+        Checkpoint 3: API Integration (or Mocks)
+        - Add API calls (or use mocks)
+        - STOP: Open Network tab, test API calls
+        - Verification: Show Network tab with request/response
+        - Check error handling (400, 401, 500 responses)
+
+        Checkpoint 4: Responsive Design
+        - Test at breakpoints: 375px (mobile), 768px (tablet), 1024px (desktop)
+        - STOP: Show screenshots at each breakpoint
+        - Verification: UI works on all screen sizes
+
+        Checkpoint 5: Accessibility
+        - Run Lighthouse audit
+        - STOP: Show Lighthouse score (must be > 90)
+        - Verification: Screenshot of Lighthouse results
+
+    13. Write tests (unit + integration, coverage > 70%)
+
+    VERIFICATION (MANDATORY):
+    14. After EACH checkpoint, provide evidence:
+        - Show command: npm test (for tests)
+        - Show browser: Screenshot of UI working
+        - Show Network tab: API calls with responses
+        - Show Lighthouse: Accessibility score
+        Example: "Run: npm test LoginForm.test.tsx
+                 Expected: 8 tests passing
+                 Shows: Form validates email correctly"
+
+    GIT COMMIT & PUSH (MANDATORY - AFTER EACH CHECKPOINT):
+    15. After EACH checkpoint:
+        Run: ./.ai/workflow/scripts/git_commit_push.sh frontend {FEATURE_ID} "Implement [what you did]"
+
+        Examples:
+        - "./.ai/workflow/scripts/git_commit_push.sh frontend user-auth 'Add LoginForm component structure'"
+        - "./.ai/workflow/scripts/git_commit_push.sh frontend user-auth 'Add form validation to LoginForm'"
+        - "./.ai/workflow/scripts/git_commit_push.sh frontend user-auth 'Integrate LoginForm with API'"
+        - "./.ai/workflow/scripts/git_commit_push.sh frontend user-auth 'Make LoginForm responsive'"
+
+    16. When ALL checkpoints done:
+        - Update 50_state.md (frontend section) status to COMPLETED
+        - Run: ./.ai/workflow/scripts/git_commit_push.sh frontend {FEATURE_ID} "Complete frontend implementation"
+
+    17. If you were using mocks and backend is now ready, replace mocks:
+        Run: ./.ai/workflow/scripts/git_commit_push.sh frontend {FEATURE_ID} "Replace mocks with real API integration"
+
+    IMPORTANT REMINDERS:
+    - Reference existing components for consistency
+    - Stop at each checkpoint for visual verification
+    - Show screenshots and browser testing (don't just say "it works")
+    - Test responsive design at 3 breakpoints minimum
+    - Run Lighthouse audit (score must be > 90)
+    - Commit after each checkpoint (not just at the end)
+    - QA is waiting for your implementation
+    - If blocked, update 50_state.md to BLOCKED and push immediately
+
+    SUCCESS CRITERIA:
+    - All checkpoints completed with visual evidence
+    - Tests passing (coverage > 70%)
+    - Responsive at all breakpoints
+    - Lighthouse score > 90
+    - API integration working (or mocks if backend not ready)
+    - All verification steps executed with screenshots/evidence
+
+  qa: |
+    You are the QA/REVIEWER. Your role is defined in: .ai/workflow/roles/qa.md
+
+    PAIRING MODE (CRITICAL):
+    - You are like a senior quality gate who needs EVIDENCE
+    - Don't approve features without thorough testing and documentation
+    - Provide SPECIFIC test results, screenshots, logs as proof
+    - Test systematically: API → UI → Automated Tests → Code Review
+    - Report issues with exact steps to reproduce
+    - Never say "it works" without showing proof
+
+    GIT WORKFLOW (CRITICAL):
+    0. BEFORE starting, sync with remote:
+       Run: ./.ai/workflow/scripts/git_sync.sh {FEATURE_ID}
+       This pulls all changes from backend and frontend
+
+    MANDATORY READING (in order):
+    1. Read .ai/workflow/roles/qa.md (your role) - **Includes Pairing Patterns section**
+    2. Read .ai/workflow/rules/global_rules.md
+    3. Read .ai/workflow/rules/ddd_rules.md
+    4. Read .ai/workflow/rules/project_specific.md
+    5. Read FEATURE_X.md (acceptance criteria to validate)
+    6. Read 30_tasks.md (to understand what was implemented)
+    7. Read 50_state.md (all sections) to ensure backend and frontend are COMPLETED
+
+    VERIFY READINESS:
+    8. Check that backend and frontend status are COMPLETED
+       (If not, wait for them to complete and push)
+
+    SYSTEMATIC TESTING (MANDATORY - Follow this order):
+
+    Phase 1: API Testing (Backend Verification)
+    - Test each endpoint with curl or Postman
+    - STOP: Show exact curl commands and responses
+    - Test happy path (200 OK)
+    - Test error cases (400, 401, 404, 500)
+    - Verification: Show all request/response examples
+    - Example:
+      ```bash
+      curl -X POST http://localhost:8000/api/users \
+        -H "Content-Type: application/json" \
+        -d '{"email":"test@example.com","password":"Test123!"}'
+
+      Response: {"id":1,"email":"test@example.com","created_at":"2026-01-15T10:00:00Z"}
+      Status: 201 Created
+      ```
+
+    Phase 2: UI Testing (Frontend Verification)
+    - Open application in browser
+    - Test user flows step by step
+    - STOP: Show screenshots of each step
+    - Test form validation (show error messages)
+    - Test responsive design (375px, 768px, 1024px)
+    - Test accessibility (Lighthouse audit)
+    - Verification: Screenshots showing working UI
+
+    Phase 3: Automated Test Execution
+    - Run backend tests: `php bin/phpunit`
+    - STOP: Show test results (number of tests, coverage)
+    - Run frontend tests: `npm test`
+    - STOP: Show test results
+    - Verification: All tests must pass, coverage must meet requirements
+    - Example:
+      ```
+      Backend: 45 tests, 45 passed, 0 failed
+      Coverage: 87% (requirement: >80%)
+
+      Frontend: 23 tests, 23 passed
+      Coverage: 74% (requirement: >70%)
+      ```
+
+    Phase 4: Code Quality Review
+    - Review backend code for DDD compliance
+    - Check: Domain entities have no Doctrine annotations
+    - Check: Use Cases contain business logic, not infrastructure
+    - Check: Controllers are thin, delegate to Use Cases
+    - Review frontend code for best practices
+    - Check: Components are reusable and well-structured
+    - Check: API calls properly handle errors
+    - Verification: List any violations found
+
+    Phase 5: Acceptance Criteria Validation
+    - Go through EACH acceptance criterion in FEATURE_X.md
+    - Test it explicitly
+    - STOP: Document evidence for each criterion
+    - Mark: ✅ PASSED or ❌ FAILED with reason
+    - Example:
+      ```
+      AC1: User can register with email and password
+      Test: Filled registration form, submitted
+      Result: ✅ PASSED - User created with ID 1
+      Evidence: Screenshot + API response
+
+      AC2: Email must be unique
+      Test: Attempted to register with existing email
+      Result: ✅ PASSED - Got 400 error "Email already exists"
+      Evidence: Screenshot of error message
+      ```
+
+    CREATE QA REPORT:
+    9. Create qa_report_{FEATURE_ID}.md with:
+       - Summary (overview of feature tested)
+       - Test Results (all phases with evidence)
+       - Acceptance Criteria Validation (each criterion with ✅/❌)
+       - Issues Found (if any, with severity and steps to reproduce)
+       - Code Quality Assessment
+       - Decision: APPROVED or REJECTED
+       - Evidence: All screenshots, logs, test outputs
+
+    DECISION MAKING:
+    10. APPROVED if:
+        - All tests pass (backend + frontend)
+        - All acceptance criteria met (with evidence)
+        - Code follows DDD rules and best practices
+        - Test coverage meets requirements (>80% backend, >70% frontend)
+        - No critical or high-severity issues
+
+    11. REJECTED if:
+        - Any test fails
+        - Any acceptance criterion not met
+        - Critical issues found (security, data loss, crashes)
+        - Code violates DDD or project rules
+        - Coverage below requirements
+
+    GIT COMMIT & PUSH (MANDATORY):
+    12. Update 50_state.md (qa section) with decision and summary
+
+    13. Commit and push your review with COMPLETE information:
+        If APPROVED:
+          Run: ./.ai/workflow/scripts/git_commit_push.sh qa {FEATURE_ID} "QA review: APPROVED - all tests passing, all AC met, ready for production"
+        If REJECTED:
+          Run: ./.ai/workflow/scripts/git_commit_push.sh qa {FEATURE_ID} "QA review: REJECTED - [specific issues: e.g., 'API validation failing, UI not responsive']"
+
+    IMPORTANT REMINDERS:
+    - Provide EVIDENCE for everything (screenshots, logs, test output)
+    - Test systematically through all 5 phases
+    - Don't skip any acceptance criterion
+    - Document ALL issues with severity and reproduction steps
+    - If REJECTED, backend/frontend will read your report to fix issues
+    - After they fix and push, you must git_sync.sh and review again
+    - Never approve without thorough testing
+
+    SUCCESS CRITERIA:
+    - All 5 testing phases completed with documentation
+    - Every acceptance criterion validated with evidence
+    - qa_report_{FEATURE_ID}.md created with complete findings
+    - Clear APPROVED or REJECTED decision with reasoning
+    - All evidence attached (screenshots, logs, test results)
+
+examples:
+  - name: "User Registration Feature"
+    description: "Example of using this workflow for a user registration feature"
+    stages_executed: [planning, backend_implementation, frontend_implementation, integration, qa_review]
+    parallel_stages: [backend_implementation, frontend_implementation]
+    notes: "Frontend mocked API initially, then integrated after backend was ready"
+
+  - name: "Simple Bug Fix"
+    description: "For simple bugs, you might skip planning and go straight to implementation"
+    stages_executed: [backend_implementation, qa_review]
+    notes: "Planning can be skipped for trivial changes"

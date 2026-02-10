@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workflow.local/schemas/api_contract.json",
+  "title": "API Contract Specification",
+  "description": "Schema for validating API contract definitions",
+  "type": "object",
+  "required": ["version", "api"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+    "api": {
+      "type": "object",
+      "required": ["name", "base_path", "endpoints"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "API name"
+        },
+        "description": {
+          "type": "string",
+          "description": "API description"
+        },
+        "base_path": {
+          "type": "string",
+          "pattern": "^/.*$",
+          "description": "Base path for all endpoints"
+        },
+        "version": {
+          "type": "string",
+          "description": "API version"
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": ["bearer", "basic", "api_key", "oauth2", "none"]
+            },
+            "required": {"type": "boolean"}
+          }
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/endpoint"},
+          "minItems": 1
+        }
+      }
+    },
+    "models": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/model"},
+      "description": "Data models used by the API"
+    }
+  },
+  "$defs": {
+    "endpoint": {
+      "type": "object",
+      "required": ["path", "method", "responses"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Endpoint path (relative to base_path)"
+        },
+        "method": {
+          "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        },
+        "summary": {
+          "type": "string",
+          "description": "Short description"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "auth_required": {
+          "type": "boolean",
+          "default": true
+        },
+        "parameters": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/parameter"}
+        },
+        "request_body": {
+          "$ref": "#/$defs/request_body"
+        },
+        "responses": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/response"},
+          "description": "Response definitions keyed by status code"
+        }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "in", "type"],
+      "properties": {
+        "name": {"type": "string"},
+        "in": {
+          "enum": ["path", "query", "header", "cookie"]
+        },
+        "type": {
+          "enum": ["string", "integer", "boolean", "array", "object"]
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "description": {"type": "string"},
+        "default": {},
+        "example": {}
+      }
+    },
+    "request_body": {
+      "type": "object",
+      "required": ["content_type"],
+      "properties": {
+        "content_type": {
+          "type": "string",
+          "default": "application/json"
+        },
+        "required": {
+          "type": "boolean",
+          "default": true
+        },
+        "schema": {
+          "oneOf": [
+            {"type": "object"},
+            {"type": "string", "description": "Reference to model"}
+          ]
+        },
+        "example": {}
+      }
+    },
+    "response": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": {"type": "string"},
+        "content_type": {
+          "type": "string",
+          "default": "application/json"
+        },
+        "schema": {
+          "oneOf": [
+            {"type": "object"},
+            {"type": "string"}
+          ]
+        },
+        "example": {},
+        "headers": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["object", "array", "string", "integer", "boolean"]
+        },
+        "description": {"type": "string"},
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "type": {"type": "string"},
+              "description": {"type": "string"},
+              "required": {"type": "boolean"},
+              "example": {}
+            }
+          }
+        },
+        "required": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  }
+}

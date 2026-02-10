@@ -150,3 +150,14 @@ All PRs must pass:
 - PHPUnit 10 with strict mode
 - Mutation testing: 79% MSI minimum
 - Tests use DataProviders for parameterized data
+
+## AI Workflow Plugin
+
+This project uses the **Multi-Agent Workflow** plugin for AI-powered development.
+
+- Plugin location: `plugins/multi-agent-workflow/`
+- Plugin CLAUDE.md: `plugins/multi-agent-workflow/CLAUDE.md`
+- AI project config: `.ai/project/`
+- Hooks: `.ai/hooks/lifecycle/`
+
+See `plugins/multi-agent-workflow/CLAUDE.md` for full workflow commands and agent documentation.

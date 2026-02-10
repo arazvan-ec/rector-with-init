@@ -1,0 +1,233 @@
+# =============================================================================
+# Spec Manifest Template
+# =============================================================================
+# This is the master index of all extracted specifications for a project.
+# It provides a single source of truth for all entities, API contracts,
+# business rules, and architectural constraints.
+#
+# Usage:
+#   1. Replace all {{VARIABLE}} placeholders with actual values
+#   2. Update counts and file lists as specs are added/modified
+#   3. Validate against spec_manifest.json schema
+#
+# Required fields: project, last_full_extraction, specs
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# PROJECT INFORMATION
+# -----------------------------------------------------------------------------
+project:
+  # Project name
+  name: "{{PROJECT_NAME}}"
+  # Project version
+  version: "{{PROJECT_VERSION}}"
+  # Absolute path to project root
+  root_path: "{{PROJECT_ROOT_PATH}}"
+
+# -----------------------------------------------------------------------------
+# EXTRACTION TIMESTAMPS
+# -----------------------------------------------------------------------------
+
+# Timestamp of last full extraction via /workflows:discover --full (ISO 8601)
+last_full_extraction: "{{FULL_EXTRACTION_TIMESTAMP}}"
+
+# Timestamp of last incremental update via compound workflow (ISO 8601)
+last_incremental_update: "{{INCREMENTAL_UPDATE_TIMESTAMP}}"
+
+# Version of the extraction algorithm used
+extraction_version: "{{EXTRACTION_VERSION}}"
+
+# -----------------------------------------------------------------------------
+# SPECIFICATIONS INDEX
+# -----------------------------------------------------------------------------
+specs:
+  # ---------------------------------------------------------------------------
+  # ENTITIES
+  # ---------------------------------------------------------------------------
+  entities:
+    # Total number of entity specs
+    count: 0
+    # List of entity spec files
+    files:
+      - name: "{{ENTITY_NAME_1}}"
+        # Path to the entity spec file
+        file: "{{ENTITY_SPEC_FILE_1}}"
+        # Primary source file the entity was extracted from
+        source: "{{ENTITY_SOURCE_1}}"
+        # When this spec was last updated
+        last_updated: "{{ENTITY_UPDATED_1}}"
+        # Extraction confidence
+        confidence: "{{ENTITY_CONFIDENCE_1}}"
+
+      - name: "{{ENTITY_NAME_2}}"
+        file: "{{ENTITY_SPEC_FILE_2}}"
+        source: "{{ENTITY_SOURCE_2}}"
+        last_updated: "{{ENTITY_UPDATED_2}}"
+        confidence: "{{ENTITY_CONFIDENCE_2}}"
+
+  # ---------------------------------------------------------------------------
+  # API CONTRACTS
+  # ---------------------------------------------------------------------------
+  api_contracts:
+    # Total number of API contract specs
+    count: 0
+    # Total number of endpoints across all contracts
+    total_endpoints: 0
+    # List of API contract spec files
+    files:
+      - name: "{{API_NAME_1}}"
+        # Path to the API contract spec file
+        file: "{{API_SPEC_FILE_1}}"
+        # Base path of this API
+        base_path: "{{API_BASE_PATH_1}}"
+        # Number of endpoints in this contract
+        endpoints_count: 0
+        # When this spec was last updated
+        last_updated: "{{API_UPDATED_1}}"
+
+      - name: "{{API_NAME_2}}"
+        file: "{{API_SPEC_FILE_2}}"
+        base_path: "{{API_BASE_PATH_2}}"
+        endpoints_count: 0
+        last_updated: "{{API_UPDATED_2}}"
+
+  # ---------------------------------------------------------------------------
+  # BUSINESS RULES
+  # ---------------------------------------------------------------------------
+  business_rules:
+    # Total number of business rule specs
+    count: 0
+    # Count by category
+    by_category:
+      validation: 0
+      authorization: 0
+      calculation: 0
+      state_transition: 0
+      constraint: 0
+      workflow: 0
+      integration: 0
+      security: 0
+      data_integrity: 0
+    # List of business rule spec files
+    files:
+      - rule_id: "{{RULE_ID_1}}"
+        name: "{{RULE_NAME_1}}"
+        category: "{{RULE_CATEGORY_1}}"
+        # Path to the rule spec file
+        file: "{{RULE_SPEC_FILE_1}}"
+        # When this spec was last updated
+        last_updated: "{{RULE_UPDATED_1}}"
+
+      - rule_id: "{{RULE_ID_2}}"
+        name: "{{RULE_NAME_2}}"
+        category: "{{RULE_CATEGORY_2}}"
+        file: "{{RULE_SPEC_FILE_2}}"
+        last_updated: "{{RULE_UPDATED_2}}"
+
+  # ---------------------------------------------------------------------------
+  # ARCHITECTURAL CONSTRAINTS
+  # ---------------------------------------------------------------------------
+  architectural_constraints:
+    # Total number of constraint specs
+    count: 0
+    # Count by type
+    by_type:
+      layer_dependency: 0
+      naming_convention: 0
+      file_organization: 0
+      import_restriction: 0
+      pattern_enforcement: 0
+      module_boundary: 0
+      technology_constraint: 0
+      security_boundary: 0
+    # List of constraint spec files
+    files:
+      - constraint_id: "{{CONSTRAINT_ID_1}}"
+        name: "{{CONSTRAINT_NAME_1}}"
+        type: "{{CONSTRAINT_TYPE_1}}"
+        # Path to the constraint spec file
+        file: "{{CONSTRAINT_SPEC_FILE_1}}"
+        # When this spec was last updated
+        last_updated: "{{CONSTRAINT_UPDATED_1}}"
+
+      - constraint_id: "{{CONSTRAINT_ID_2}}"
+        name: "{{CONSTRAINT_NAME_2}}"
+        type: "{{CONSTRAINT_TYPE_2}}"
+        file: "{{CONSTRAINT_SPEC_FILE_2}}"
+        last_updated: "{{CONSTRAINT_UPDATED_2}}"
+
+# -----------------------------------------------------------------------------
+# COVERAGE METRICS
+# -----------------------------------------------------------------------------
+# Coverage metrics for spec extraction completeness
+coverage:
+  # Number of entities detected in code
+  entities_detected: 0
+  # Estimated total entities in the project
+  entities_estimated: 0
+  # Coverage percentage (e.g., "85%")
+  entities_coverage: "{{ENTITIES_COVERAGE}}"
+
+  # Number of API endpoints detected
+  endpoints_detected: 0
+  # Estimated total endpoints
+  endpoints_estimated: 0
+  # Coverage percentage
+  endpoints_coverage: "{{ENDPOINTS_COVERAGE}}"
+
+  # Number of business rules detected
+  rules_detected: 0
+
+  # Number of architectural constraints detected
+  constraints_detected: 0
+
+# -----------------------------------------------------------------------------
+# DRIFT STATUS
+# -----------------------------------------------------------------------------
+# Status of spec drift (mismatch between code and specs)
+drift_status:
+  # When drift was last checked
+  last_check: "{{DRIFT_CHECK_TIMESTAMP}}"
+  # Whether drift was detected
+  drift_detected: false
+  # List of detected drift items
+  drift_items:
+    - type: "{{DRIFT_TYPE_1}}"
+      # Spec file with the drift
+      spec_file: "{{DRIFT_SPEC_FILE_1}}"
+      # Source file that differs
+      source_file: "{{DRIFT_SOURCE_FILE_1}}"
+      # Description of the drift
+      description: "{{DRIFT_DESCRIPTION_1}}"
+
+# -----------------------------------------------------------------------------
+# UPDATE HISTORY
+# -----------------------------------------------------------------------------
+# History of spec updates for audit trail
+update_history:
+  - timestamp: "{{UPDATE_TIMESTAMP_1}}"
+    # Update type: full_extraction, incremental, manual, compound
+    type: "{{UPDATE_TYPE_1}}"
+    # What triggered this update
+    trigger: "{{UPDATE_TRIGGER_1}}"
+    # Summary of changes made
+    changes:
+      entities_added: 0
+      entities_modified: 0
+      entities_removed: 0
+      endpoints_added: 0
+      endpoints_modified: 0
+      rules_added: 0
+      constraints_added: 0
+
+  - timestamp: "{{UPDATE_TIMESTAMP_2}}"
+    type: "{{UPDATE_TYPE_2}}"
+    trigger: "{{UPDATE_TRIGGER_2}}"
+    changes:
+      entities_added: 0
+      entities_modified: 0
+      entities_removed: 0
+      endpoints_added: 0
+      endpoints_modified: 0
+      rules_added: 0
+      constraints_added: 0

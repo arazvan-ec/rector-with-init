@@ -1,0 +1,212 @@
+# Capability Providers Configuration
+# Version: 1.2.0
+# Purpose: Model-agnostic provider abstraction for workflow capabilities
+#
+# This file defines which implementation to use for each capability.
+# Set to "auto" for automatic detection based on model self-awareness,
+# or force a specific provider when you know your environment.
+#
+# When "auto": Claude detects its model and available tools at runtime
+# When explicit: Forces the specified provider regardless of model
+
+providers:
+
+  # --- Parallelization ---
+  # How multiple agents work simultaneously
+  #
+  # agent-teams: Native Claude Code Agent Teams (Opus 4.6+, requires CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1)
+  #   - Independent Claude sessions with own context windows
+  #   - Direct inter-agent communication via shared task list
+  #   - TeammateTool for spawning teammates
+  #   - Orchestrator coordinates work
+  #   - No external dependencies
+  #
+  # worktrees: Git worktrees + terminal multiplexer (any model)
+  #   - Filesystem-level isolation via git worktrees
+  #   - Terminal multiplexer for visual session management
+  #   - Manual coordination via 50_state.md + git sync
+  #   - Requires: git >= 2.30 + terminal multiplexer (see terminal_orchestrator)
+  #
+  parallelization: auto  # auto | agent-teams | worktrees
+
+  # --- Terminal Orchestrator ---
+  # Which terminal multiplexer to use with the worktrees provider.
+  # Only applies when parallelization resolves to "worktrees".
+  #
+  # auto: Detects first available in order: tmux → screen → zellij → none
+  #
+  # tmux: (recommended default)
+  #   - Mature, scriptable, widely available
+  #   - Supports panes, windows, sessions
+  #   - Detach/reattach for persistence
+  #   - Requires: tmux >= 3.0
+  #   - Install: apt install tmux / brew install tmux
+  #
+  # screen: (universal fallback)
+  #   - Pre-installed on most Unix systems
+  #   - Simpler than tmux, fewer features
+  #   - Good for minimal/headless environments
+  #   - Requires: screen >= 4.0
+  #   - Install: apt install screen / brew install screen
+  #
+  # zellij: (modern alternative)
+  #   - Rust-based, modern UX, plugin system
+  #   - Better defaults, floating panes, WebAssembly plugins
+  #   - Less mature ecosystem, smaller community
+  #   - Requires: zellij >= 0.40
+  #   - Install: cargo install zellij / brew install zellij
+  #
+  # none: (worktrees only, no multiplexer)
+  #   - Creates git worktrees but does NOT launch a multiplexer
+  #   - User manages terminals manually (separate tabs/windows)
+  #   - Useful when: SSH without multiplexer, IDE terminals, CI/CD
+  #   - Zero external dependencies beyond git
+  #
+  terminal_orchestrator: auto  # auto | tmux | screen | zellij | none
+
+  # --- Context Management ---
+  # How context window exhaustion is handled
+  #
+  # compaction-aware: Leverages server-side Compaction API (Opus 4.6+)
+  #   - Relaxed thresholds (context is auto-summarized by API)
+  #   - pre_compact.sh hook still fires for state preservation
+  #   - Snapshot/restore available but less critical
+  #   - Supports 200K default, 1M beta context windows
+  #
+  # manual-snapshots: Manual snapshot/restore cycle (any model)
+  #   - Strict 70% rule with proactive compaction
+  #   - token-advisor for monitoring
+  #   - Frequent checkpoints recommended
+  #   - Conservative thresholds (20 files, 50 messages, 2 hours)
+  #
+  context_management: auto  # auto | compaction-aware | manual-snapshots
+
+  # --- Context Isolation (Fork Strategy) ---
+  # When to use context: fork for skills and agents
+  #
+  # selective: Fork only truly heavy operations (Opus 4.6+ with 200K/1M context)
+  #   - Fork when: cross-codebase analysis, external integrations, >30 files
+  #   - Inline when: focused review, <15 files, single-domain analysis
+  #   - Reason: Larger context window tolerates more inline analysis
+  #
+  # aggressive: Fork all analysis operations (any model)
+  #   - All 7 review agents forked
+  #   - All 7 heavy skills forked (consultant, coverage-checker, etc.)
+  #   - Reason: Protect limited context window at all costs
+  #
+  fork_strategy: auto  # auto | selective | aggressive
+
+  # --- Coordination ---
+  # How agents communicate and share state
+  #
+  # Note: 50_state.md is ALWAYS used regardless of provider.
+  # This setting controls the ADDITIONAL coordination layer.
+  #
+  # native-plus-state: Agent Teams communication + 50_state.md (Opus 4.6+)
+  #   - Shared task list (in-memory, managed by orchestrator)
+  #   - Direct teammate communication
+  #   - 50_state.md for persistent state across sessions
+  #
+  # state-plus-git: 50_state.md + git sync (any model)
+  #   - All coordination via file-based state
+  #   - Git commits as synchronization points
+  #   - /workflows:sync for explicit state sharing
+  #
+  coordination: auto  # auto | native-plus-state | state-plus-git
+
+  # --- Execution Mode ---
+  # Whether the agent generates code or guides a human to write it.
+  #
+  # agent-executes: The agent IS the engineer — generates code, runs tests, iterates
+  #   - Reads existing patterns as reference (codebase-analyzer)
+  #   - Generates code using Write/Edit tools following the plan
+  #   - Writes tests FIRST (TDD), then implementation
+  #   - Runs tests via test-runner skill
+  #   - Auto-corrects via Ralph Wiggum loop (up to 10 iterations)
+  #   - Validates SOLID via solid-analyzer skill
+  #   - Checkpoints on success, marks BLOCKED on failure
+  #   - Best for: well-defined tasks with existing patterns to follow
+  #
+  # human-guided: The agent plans and guides — human writes code (legacy behavior)
+  #   - Creates detailed task specs with acceptance criteria
+  #   - Points to reference files and patterns
+  #   - Human writes code following the guidance
+  #   - Agent verifies with test-runner and solid-analyzer
+  #   - Best for: novel architectures, security-critical code, learning
+  #
+  # hybrid: Agent generates, human reviews before each checkpoint
+  #   - Agent generates code and tests
+  #   - Pauses before checkpoint for human review
+  #   - Human can accept, modify, or reject
+  #   - Agent continues with human's changes
+  #   - Best for: teams building trust with agent execution
+  #
+  execution_mode: auto  # auto | agent-executes | human-guided | hybrid
+
+# --- Thresholds ---
+# Override default thresholds based on your model's capabilities.
+# When null, the provider auto-selects appropriate values.
+
+thresholds:
+
+  # Context management thresholds
+  context:
+    # Percentage of context used before recommending action
+    # Default: 70% (manual-snapshots), 85% (compaction-aware)
+    compact_at_percent: null
+
+    # Max files read before suggesting fresh session
+    # Default: 20 (manual-snapshots), 50 (compaction-aware)
+    max_files_read: null
+
+    # Max session duration before suggesting checkpoint
+    # Default: "2h" (manual-snapshots), "4h" (compaction-aware)
+    max_session_duration: null
+
+    # Max messages before suggesting checkpoint
+    # Default: 50 (manual-snapshots), 150 (compaction-aware)
+    max_messages: null
+
+  # Fork decision thresholds
+  fork:
+    # Files read threshold to trigger fork (selective mode)
+    # Default: 30 (selective), 10 (aggressive)
+    min_files_for_fork: null
+
+    # Output lines threshold to trigger fork (selective mode)
+    # Default: 500 (selective), 200 (aggressive)
+    min_output_for_fork: null
+
+# --- API Recommendations ---
+# These settings CANNOT be controlled by the plugin directly.
+# They are recommendations for whoever configures the API caller
+# (Claude Code CLI, custom SDK integration, etc.)
+#
+# Document them here so the team knows the optimal API configuration
+# for each workflow phase.
+
+api_recommendations:
+  # Effort levels per workflow phase (Opus 4.6+ adaptive thinking)
+  effort_by_phase:
+    route: medium       # Routing is classification, not deep analysis
+    plan: max           # Planning benefits from maximum reasoning
+    work: high          # Implementation needs solid reasoning
+    review: max         # Reviews need thorough analysis
+    compound: medium    # Learning capture is structured extraction
+    research: medium    # Research agents balance breadth vs depth
+    quick_check: low    # Token advisor, status checks
+
+  # Speed mode recommendations (Opus 4.6+ fast mode)
+  speed_by_task:
+    research_agents: fast       # Read-heavy, benefit from speed
+    code_review: standard       # Accuracy matters more than speed
+    implementation: standard    # Correctness is critical
+    quick_status: fast          # Rapid checks
+    planning: standard          # Depth matters
+
+  # Thinking mode
+  thinking:
+    opus_4_6: adaptive          # Recommended for Opus 4.6
+    opus_4_5: enabled           # Standard extended thinking
+    sonnet: enabled             # Standard extended thinking
+    haiku: disabled             # Not needed for lightweight tasks

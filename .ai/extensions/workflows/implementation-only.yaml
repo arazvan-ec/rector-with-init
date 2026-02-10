@@ -1,0 +1,431 @@
+name: "Implementation Only (Post Task-Breakdown)"
+version: "1.0"
+description: |
+  Workflow for features already planned with task-breakdown workflow.
+  Skips Planning stage and goes directly to implementation.
+
+  PREREQUISITE: Run 'task-breakdown' workflow first to generate:
+  - 00_requirements_analysis.md
+  - 10_architecture.md
+  - 15_data_model.md
+  - 20_api_contracts.md
+  - 30_tasks_backend.md
+  - 31_tasks_frontend.md
+  - 32_tasks_qa.md
+
+metadata:
+  project: PROJECT_X
+  created: "2026-01-16"
+  updated: "2026-01-16"
+  requires: task-breakdown
+  notes: "Use after task-breakdown workflow completes"
+
+# Only 3 roles needed (no Planner)
+roles:
+  - id: backend
+    name: Backend Engineer
+    role_file: .ai/workflow/roles/backend.md
+
+  - id: frontend
+    name: Frontend Engineer
+    role_file: .ai/workflow/roles/frontend.md
+
+  - id: qa
+    name: QA / Reviewer
+    role_file: .ai/workflow/roles/qa.md
+
+# Pre-flight validation: Ensure task-breakdown was executed
+validation:
+  pre_flight:
+    description: "Verify task-breakdown artifacts exist before starting"
+    required_files:
+      - path: ".ai/project/features/{FEATURE_ID}/00_requirements_analysis.md"
+        error: "Missing requirements analysis. Run task-breakdown workflow first."
+      - path: ".ai/project/features/{FEATURE_ID}/20_api_contracts.md"
+        error: "Missing API contracts. Run task-breakdown workflow first."
+      - path: ".ai/project/features/{FEATURE_ID}/30_tasks_backend.md"
+        error: "Missing backend tasks. Run task-breakdown workflow first."
+      - path: ".ai/project/features/{FEATURE_ID}/31_tasks_frontend.md"
+        error: "Missing frontend tasks. Run task-breakdown workflow first."
+      - path: ".ai/project/features/{FEATURE_ID}/50_state.md"
+        error: "Missing state file. Run task-breakdown workflow first."
+
+    check_state:
+      file: ".ai/project/features/{FEATURE_ID}/50_state.md"
+      section: "Planner"
+      expected_status: "COMPLETED"
+      error: "Planner status is not COMPLETED. Ensure task-breakdown workflow finished."
+
+stages:
+  - id: backend_implementation
+    name: "Backend Implementation"
+    role: backend
+    description: "Implement API following detailed task breakdown from task-breakdown workflow"
+    workspace: "./backend/src/"
+
+    inputs:
+      # From task-breakdown workflow (detailed)
+      - 00_requirements_analysis.md (functional & non-functional requirements)
+      - 10_architecture.md (DDD layers, entities, aggregates)
+      - 15_data_model.md (SQL schemas, relationships)
+      - 20_api_contracts.md (complete endpoint specifications)
+      - 30_tasks_backend.md (detailed tasks with code examples)
+      - 35_dependencies.md (task dependencies)
+
+    outputs:
+      - Backend code (./backend/src/)
+      - Tests (./backend/tests/)
+      - 50_state.md (backend section)
+
+    rules:
+      - Read: .ai/workflow/roles/backend.md
+      - Read: .ai/workflow/rules/global_rules.md
+      - Read: .ai/workflow/rules/ddd_rules.md
+      - Read: .ai/workflow/rules/project_specific.md
+      - Read: All task-breakdown artifacts (00_*, 10_*, 15_*, 20_*, 30_tasks_backend.md)
+      - Write: ./backend/src/**
+      - Write: ./backend/tests/**
+      - Write: 50_state.md (backend section only)
+
+    # Blocking checkpoints with auto-correction loop
+    checkpoints:
+      - name: domain_layer
+        description: "Domain entities, value objects, and domain services"
+        blocker: true
+        max_iterations: 10
+        verify:
+          - command: "php bin/phpunit tests/Unit/Domain/"
+            expected: "exit_code == 0"
+          - command: "grep -r '@ORM' backend/src/Domain/ || true"
+            expected: "no_output"
+        on_failure: |
+          Document in DECISIONS.md, update 50_state.md to BLOCKED
+
+      - name: application_layer
+        description: "Use cases, application services, and DTOs"
+        blocker: true
+        max_iterations: 10
+        depends_on: [domain_layer]
+        verify:
+          - command: "php bin/phpunit tests/Unit/Application/"
+            expected: "exit_code == 0"
+          - command: "php bin/phpunit --coverage-text --filter=Application | grep -E 'Lines:.*%'"
+            expected: "coverage >= 80%"
+
+      - name: infrastructure_layer
+        description: "Repositories, controllers, and external services"
+        blocker: true
+        max_iterations: 10
+        depends_on: [application_layer]
+        verify:
+          - command: "php bin/phpunit tests/Integration/"
+            expected: "exit_code == 0"
+          - command: "php bin/console doctrine:schema:validate"
+            expected: "exit_code == 0"
+
+      - name: api_endpoints
+        description: "REST API endpoints matching 20_api_contracts.md"
+        blocker: true
+        max_iterations: 10
+        depends_on: [infrastructure_layer]
+        verify:
+          - command: "php bin/phpunit --coverage-text | grep -E 'Lines:.*%'"
+            expected: "total_coverage >= 80%"
+
+    completion_criteria:
+      - All tasks in 30_tasks_backend.md are completed
+      - Tests passing (coverage > 80%)
+      - API matches contracts in 20_api_contracts.md
+      - 50_state.md (backend) status is COMPLETED
+
+    dependencies: []  # No planning dependency - already done
+    parallel_with: [frontend_implementation]
+
+  - id: frontend_implementation
+    name: "Frontend Implementation"
+    role: frontend
+    description: "Implement UI following detailed task breakdown from task-breakdown workflow"
+    workspace: "./frontend1/src/"
+
+    inputs:
+      # From task-breakdown workflow (detailed)
+      - 00_requirements_analysis.md (user stories, acceptance criteria)
+      - 20_api_contracts.md (to mock or consume)
+      - 31_tasks_frontend.md (detailed tasks with code examples)
+      - 35_dependencies.md (task dependencies)
+      - 50_state.md (backend section) - to check if API is ready
+
+    outputs:
+      - Frontend code (./frontend1/src/)
+      - Tests (./frontend1/tests/)
+      - Mocks (if API not ready)
+      - 50_state.md (frontend section)
+
+    rules:
+      - Read: .ai/workflow/roles/frontend.md
+      - Read: .ai/workflow/rules/global_rules.md
+      - Read: .ai/workflow/rules/project_specific.md
+      - Read: All task-breakdown artifacts (00_*, 20_*, 31_tasks_frontend.md)
+      - Write: ./frontend1/src/**
+      - Write: ./frontend1/tests/**
+      - Write: 50_state.md (frontend section only)
+
+    # Blocking checkpoints with auto-correction loop
+    checkpoints:
+      - name: component_structure
+        description: "Components with props, state, and TypeScript types"
+        blocker: true
+        max_iterations: 10
+        verify:
+          - command: "npm run type-check"
+            expected: "exit_code == 0"
+
+      - name: form_logic
+        description: "Form validation and event handlers"
+        blocker: true
+        max_iterations: 10
+        depends_on: [component_structure]
+        verify:
+          - command: "npm test -- --passWithNoTests"
+            expected: "exit_code == 0"
+          - command: "npm run lint"
+            expected: "exit_code == 0"
+
+      - name: api_integration
+        description: "API integration or mocks"
+        blocker: true
+        max_iterations: 10
+        depends_on: [form_logic]
+        verify:
+          - command: "npm test -- --coverage"
+            expected: "coverage >= 70%"
+
+      - name: responsive_and_a11y
+        description: "Responsive design and accessibility"
+        blocker: true
+        max_iterations: 10
+        depends_on: [api_integration]
+        verify:
+          - manual: "Lighthouse audit"
+            expected: "accessibility_score >= 90"
+
+    completion_criteria:
+      - All tasks in 31_tasks_frontend.md are completed
+      - Tests passing (coverage > 70%)
+      - Responsive at 375px, 768px, 1024px
+      - Lighthouse score > 90
+      - 50_state.md (frontend) status is COMPLETED or WAITING_API
+
+    dependencies: []  # No planning dependency - already done
+    parallel_with: [backend_implementation]
+
+  - id: qa_review
+    name: "QA Review & Validation"
+    role: qa
+    description: "Review implementation against detailed requirements from task-breakdown"
+    workspace: "./"
+
+    inputs:
+      # From task-breakdown workflow (for validation)
+      - 00_requirements_analysis.md (acceptance criteria to validate)
+      - 20_api_contracts.md (API contracts to test)
+      - 32_tasks_qa.md (detailed QA test cases)
+      # From implementation
+      - All code (backend + frontend)
+      - All tests
+
+    outputs:
+      - qa_report_{FEATURE_ID}.md
+      - 50_state.md (qa section)
+
+    rules:
+      - Read: .ai/workflow/roles/qa.md
+      - Read: .ai/workflow/rules/global_rules.md
+      - Read: .ai/workflow/rules/ddd_rules.md
+      - Read: .ai/workflow/rules/project_specific.md
+      - Read: All task-breakdown artifacts
+      - Read: All code
+      - Write: qa_report_{FEATURE_ID}.md
+      - Write: 50_state.md (qa section only)
+
+    qa_phases:
+      - phase: 1
+        name: "API Testing"
+        description: "Test endpoints against 20_api_contracts.md"
+        evidence_required: ["curl commands", "request/response pairs"]
+
+      - phase: 2
+        name: "UI Testing"
+        description: "Test user flows from 00_requirements_analysis.md"
+        evidence_required: ["screenshots", "user flow documentation"]
+
+      - phase: 3
+        name: "Automated Tests"
+        description: "Execute all tests"
+        evidence_required: ["test output", "coverage report"]
+
+      - phase: 4
+        name: "Code Quality"
+        description: "Review against 10_architecture.md (DDD compliance)"
+        evidence_required: ["code review notes"]
+
+      - phase: 5
+        name: "Acceptance Criteria"
+        description: "Validate each criterion from 00_requirements_analysis.md"
+        evidence_required: ["criterion checklist with evidence"]
+
+    completion_criteria:
+      - All 5 QA phases completed with evidence
+      - All test cases from 32_tasks_qa.md executed
+      - All acceptance criteria validated
+      - qa_report_{FEATURE_ID}.md created
+      - 50_state.md (qa) status is APPROVED or REJECTED
+
+    # QA waits for BOTH backend AND frontend
+    dependencies: [backend_implementation, frontend_implementation]
+    parallel_with: []
+
+    trigger_condition: |
+      QA stage starts automatically when BOTH conditions are met:
+      - 50_state.md backend section status == COMPLETED
+      - 50_state.md frontend section status in [COMPLETED, WAITING_API]
+
+instructions:
+  backend: |
+    You are the BACKEND ENGINEER for feature {FEATURE_ID}.
+
+    IMPORTANT: Planning is already done via task-breakdown workflow.
+    You have DETAILED documentation to follow.
+
+    GIT WORKFLOW (CRITICAL):
+    0. BEFORE starting, sync with remote:
+       Run: ./.ai/workflow/scripts/git_sync.sh {FEATURE_ID}
+
+    MANDATORY READING (in order):
+    1. Read .ai/workflow/roles/backend.md (your role)
+    2. Read .ai/workflow/rules/global_rules.md
+    3. Read .ai/workflow/rules/ddd_rules.md
+    4. Read .ai/workflow/rules/project_specific.md
+
+    READ TASK-BREAKDOWN ARTIFACTS (CRITICAL - these have detailed specs):
+    5. Read 00_requirements_analysis.md (requirements with IDs)
+    6. Read 10_architecture.md (DDD structure, entities)
+    7. Read 15_data_model.md (SQL schemas, relationships)
+    8. Read 20_api_contracts.md (COMPLETE API specifications)
+    9. Read 30_tasks_backend.md (YOUR DETAILED TASKS with code examples)
+    10. Read 35_dependencies.md (task dependencies)
+
+    IMPLEMENT:
+    11. Follow tasks in 30_tasks_backend.md EXACTLY
+        - Each task has code examples - use them as templates
+        - Each task has verification commands - run them
+        - Each task has acceptance criteria - check all boxes
+
+    12. Use AUTO-CORRECTION LOOP at each checkpoint:
+        - Run tests → If fail → Fix → Repeat (max 10 iterations)
+        - Only advance when tests pass
+
+    13. Commit after EACH checkpoint
+
+    SUCCESS CRITERIA:
+    - All tasks in 30_tasks_backend.md completed ✓
+    - All acceptance criteria met ✓
+    - Coverage > 80% ✓
+    - API matches 20_api_contracts.md exactly ✓
+
+  frontend: |
+    You are the FRONTEND ENGINEER for feature {FEATURE_ID}.
+
+    IMPORTANT: Planning is already done via task-breakdown workflow.
+    You have DETAILED documentation to follow.
+
+    GIT WORKFLOW (CRITICAL):
+    0. BEFORE starting, sync with remote:
+       Run: ./.ai/workflow/scripts/git_sync.sh {FEATURE_ID}
+
+    MANDATORY READING (in order):
+    1. Read .ai/workflow/roles/frontend.md (your role)
+    2. Read .ai/workflow/rules/global_rules.md
+    3. Read .ai/workflow/rules/project_specific.md
+
+    READ TASK-BREAKDOWN ARTIFACTS (CRITICAL):
+    4. Read 00_requirements_analysis.md (user stories, acceptance criteria)
+    5. Read 20_api_contracts.md (API to integrate or mock)
+    6. Read 31_tasks_frontend.md (YOUR DETAILED TASKS with code examples)
+    7. Read 35_dependencies.md (task dependencies)
+    8. Read 50_state.md (check if backend API is ready)
+
+    IMPLEMENT:
+    9. Follow tasks in 31_tasks_frontend.md EXACTLY
+       - Each task has code examples - use them as templates
+       - Each task has verification steps - execute them
+       - Each task has acceptance criteria - check all boxes
+
+    10. If backend NOT ready: Mock API per 20_api_contracts.md
+
+    11. Use AUTO-CORRECTION LOOP at each checkpoint
+
+    12. Verify responsive design (375px, 768px, 1024px)
+
+    13. Run Lighthouse audit (must be > 90)
+
+    14. Commit after EACH checkpoint
+
+    SUCCESS CRITERIA:
+    - All tasks in 31_tasks_frontend.md completed ✓
+    - Coverage > 70% ✓
+    - Responsive at all breakpoints ✓
+    - Lighthouse > 90 ✓
+
+  qa: |
+    You are the QA/REVIEWER for feature {FEATURE_ID}.
+
+    IMPORTANT: You have DETAILED test cases from task-breakdown workflow.
+
+    WAIT CONDITION:
+    Do NOT start until BOTH are true:
+    - Backend 50_state.md status == COMPLETED
+    - Frontend 50_state.md status in [COMPLETED, WAITING_API]
+
+    GIT WORKFLOW (CRITICAL):
+    0. BEFORE starting, sync with remote:
+       Run: ./.ai/workflow/scripts/git_sync.sh {FEATURE_ID}
+
+    MANDATORY READING (in order):
+    1. Read .ai/workflow/roles/qa.md (your role)
+    2. Read .ai/workflow/rules/global_rules.md
+    3. Read .ai/workflow/rules/ddd_rules.md
+
+    READ TASK-BREAKDOWN ARTIFACTS (CRITICAL):
+    4. Read 00_requirements_analysis.md (acceptance criteria to validate)
+    5. Read 20_api_contracts.md (API contracts to test)
+    6. Read 32_tasks_qa.md (YOUR DETAILED TEST CASES)
+
+    EXECUTE 5-PHASE TESTING:
+    Phase 1: API Testing
+    - Test each endpoint per 20_api_contracts.md
+    - Show curl commands and responses
+
+    Phase 2: UI Testing
+    - Test user flows per 00_requirements_analysis.md
+    - Show screenshots
+
+    Phase 3: Automated Tests
+    - Run all backend/frontend tests
+    - Show results and coverage
+
+    Phase 4: Code Quality
+    - Verify DDD compliance per 10_architecture.md
+
+    Phase 5: Acceptance Criteria
+    - Check EVERY criterion from 00_requirements_analysis.md
+    - Provide evidence for each
+
+    DECISION:
+    - APPROVED: All criteria met with evidence
+    - REJECTED: Any criterion failed (list specific failures)
+
+    SUCCESS CRITERIA:
+    - All test cases from 32_tasks_qa.md executed ✓
+    - All acceptance criteria validated with evidence ✓
+    - qa_report created with complete findings ✓

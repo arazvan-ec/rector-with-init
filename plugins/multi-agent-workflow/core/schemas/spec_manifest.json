@@ -1,0 +1,183 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spec_manifest.json",
+  "title": "Spec Manifest",
+  "description": "Master index of all extracted specifications for a project",
+  "type": "object",
+  "required": ["project", "last_full_extraction", "specs"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "root_path": { "type": "string" }
+      }
+    },
+    "last_full_extraction": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last full /workflows:discover --full"
+    },
+    "last_incremental_update": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last incremental update (via compound)"
+    },
+    "extraction_version": {
+      "type": "string",
+      "description": "Version of the extraction algorithm used"
+    },
+    "specs": {
+      "type": "object",
+      "properties": {
+        "entities": {
+          "type": "object",
+          "properties": {
+            "count": { "type": "integer" },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "file": { "type": "string" },
+                  "source": { "type": "string" },
+                  "last_updated": { "type": "string", "format": "date-time" },
+                  "confidence": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "api_contracts": {
+          "type": "object",
+          "properties": {
+            "count": { "type": "integer" },
+            "total_endpoints": { "type": "integer" },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "file": { "type": "string" },
+                  "base_path": { "type": "string" },
+                  "endpoints_count": { "type": "integer" },
+                  "last_updated": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "business_rules": {
+          "type": "object",
+          "properties": {
+            "count": { "type": "integer" },
+            "by_category": {
+              "type": "object",
+              "additionalProperties": { "type": "integer" }
+            },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "rule_id": { "type": "string" },
+                  "name": { "type": "string" },
+                  "category": { "type": "string" },
+                  "file": { "type": "string" },
+                  "last_updated": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "architectural_constraints": {
+          "type": "object",
+          "properties": {
+            "count": { "type": "integer" },
+            "by_type": {
+              "type": "object",
+              "additionalProperties": { "type": "integer" }
+            },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "constraint_id": { "type": "string" },
+                  "name": { "type": "string" },
+                  "type": { "type": "string" },
+                  "file": { "type": "string" },
+                  "last_updated": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "description": "Coverage metrics for spec extraction",
+      "properties": {
+        "entities_detected": { "type": "integer" },
+        "entities_estimated": { "type": "integer" },
+        "entities_coverage": { "type": "string" },
+        "endpoints_detected": { "type": "integer" },
+        "endpoints_estimated": { "type": "integer" },
+        "endpoints_coverage": { "type": "string" },
+        "rules_detected": { "type": "integer" },
+        "constraints_detected": { "type": "integer" }
+      }
+    },
+    "drift_status": {
+      "type": "object",
+      "description": "Status of spec drift (code vs. specs mismatch)",
+      "properties": {
+        "last_check": { "type": "string", "format": "date-time" },
+        "drift_detected": { "type": "boolean" },
+        "drift_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "spec_file": { "type": "string" },
+              "source_file": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "update_history": {
+      "type": "array",
+      "description": "History of spec updates",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": { "type": "string", "format": "date-time" },
+          "type": {
+            "type": "string",
+            "enum": ["full_extraction", "incremental", "manual", "compound"]
+          },
+          "trigger": { "type": "string" },
+          "changes": {
+            "type": "object",
+            "properties": {
+              "entities_added": { "type": "integer" },
+              "entities_modified": { "type": "integer" },
+              "entities_removed": { "type": "integer" },
+              "endpoints_added": { "type": "integer" },
+              "endpoints_modified": { "type": "integer" },
+              "rules_added": { "type": "integer" },
+              "constraints_added": { "type": "integer" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

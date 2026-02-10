@@ -1,0 +1,185 @@
+# =============================================================================
+# Entity Specification Template
+# =============================================================================
+# This template defines the structure for entity specifications extracted from
+# project code. Entities represent domain objects with fields, relationships,
+# and business rules.
+#
+# Usage:
+#   1. Replace all {{VARIABLE}} placeholders with actual values
+#   2. Remove any optional sections that don't apply
+#   3. Validate against entity_spec.json schema
+#
+# Required fields: entity, source_file, last_extracted, fields
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASIC INFORMATION
+# -----------------------------------------------------------------------------
+
+# Name of the entity (use PascalCase, e.g., "User", "OrderItem", "PaymentMethod")
+entity: "{{ENTITY_NAME}}"
+
+# Primary source file where this entity is defined
+# Use relative path from project root
+source_file: "{{SOURCE_FILE_PATH}}"
+
+# Timestamp of when this spec was last extracted/updated (ISO 8601 format)
+last_extracted: "{{EXTRACTION_TIMESTAMP}}"
+
+# Confidence level of the extraction (e.g., "95%", "80%")
+# Higher values indicate more reliable extraction
+confidence: "{{CONFIDENCE_PERCENTAGE}}"
+
+# Brief description of what this entity represents in the domain
+description: "{{ENTITY_DESCRIPTION}}"
+
+# -----------------------------------------------------------------------------
+# FIELDS
+# -----------------------------------------------------------------------------
+# Define all fields/properties of this entity
+# Each field must have at least 'name' and 'type'
+fields:
+  # Primary identifier field
+  - name: "{{FIELD_NAME_1}}"
+    # Data type: string, number, boolean, UUID, datetime, enum, etc.
+    type: "{{FIELD_TYPE_1}}"
+    # Constraints: primary_key, unique, not_null, auto_generated, indexed, etc.
+    constraints:
+      - "{{CONSTRAINT_1}}"
+      - "{{CONSTRAINT_2}}"
+    # Validation rule: email_format, url, min_length:X, max_length:X, regex:X, etc.
+    validation: "{{VALIDATION_RULE}}"
+    # Default value if not provided (can be any type)
+    default: "{{DEFAULT_VALUE}}"
+    # Is this field nullable?
+    nullable: false
+    # Description of what this field represents
+    description: "{{FIELD_DESCRIPTION_1}}"
+
+  # Enum field example
+  - name: "{{ENUM_FIELD_NAME}}"
+    type: "enum"
+    # Possible values for enum types
+    values:
+      - "{{ENUM_VALUE_1}}"
+      - "{{ENUM_VALUE_2}}"
+      - "{{ENUM_VALUE_3}}"
+    constraints:
+      - "not_null"
+    nullable: false
+    description: "{{ENUM_FIELD_DESCRIPTION}}"
+
+  # Sensitive field example (e.g., password)
+  - name: "{{SENSITIVE_FIELD_NAME}}"
+    type: "string"
+    # Storage handling: hashed_bcrypt, encrypted, plaintext, etc.
+    storage: "{{STORAGE_METHOD}}"
+    constraints:
+      - "not_null"
+    validation: "{{SENSITIVE_FIELD_VALIDATION}}"
+    nullable: false
+    description: "{{SENSITIVE_FIELD_DESCRIPTION}}"
+
+# -----------------------------------------------------------------------------
+# RELATIONSHIPS
+# -----------------------------------------------------------------------------
+# Define relationships with other entities
+# Relationship types: has_one, has_many, belongs_to, many_to_many
+relationships:
+  # One-to-many relationship example
+  - type: "has_many"
+    # Name of the related entity (PascalCase)
+    target: "{{RELATED_ENTITY_1}}"
+    # Foreign key field name in the related entity
+    foreign_key: "{{FOREIGN_KEY_FIELD}}"
+    # Cascade behaviors: delete, update, persist
+    cascade:
+      - "delete"
+
+  # Many-to-one relationship example
+  - type: "belongs_to"
+    target: "{{RELATED_ENTITY_2}}"
+    foreign_key: "{{FK_FIELD_NAME}}"
+
+  # Many-to-many relationship example
+  - type: "many_to_many"
+    target: "{{RELATED_ENTITY_3}}"
+    # Junction/pivot table name for many-to-many
+    through: "{{JUNCTION_TABLE_NAME}}"
+
+# -----------------------------------------------------------------------------
+# BUSINESS RULES
+# -----------------------------------------------------------------------------
+# List of business rule IDs that apply to this entity
+# Reference rule_id values from business_rule_spec.yaml files
+business_rules:
+  - "{{RULE_ID_1}}"
+  - "{{RULE_ID_2}}"
+
+# -----------------------------------------------------------------------------
+# VALUE OBJECTS
+# -----------------------------------------------------------------------------
+# Value objects used by this entity (DDD concept)
+# Value objects are immutable objects defined by their attributes
+value_objects:
+  - name: "{{VALUE_OBJECT_NAME}}"
+    # Field in the entity that uses this value object
+    field: "{{FIELD_USING_VO}}"
+    # Source file where the value object is defined
+    source_file: "{{VALUE_OBJECT_SOURCE}}"
+
+# -----------------------------------------------------------------------------
+# REPOSITORY
+# -----------------------------------------------------------------------------
+# Repository interface and implementation for data access
+repository:
+  # Interface name (e.g., "UserRepositoryInterface")
+  interface: "{{REPOSITORY_INTERFACE}}"
+  # Implementation class (e.g., "DoctrineUserRepository")
+  implementation: "{{REPOSITORY_IMPLEMENTATION}}"
+  # Available repository methods
+  methods:
+    - name: "{{METHOD_NAME_1}}"
+      parameters:
+        - "{{PARAM_1}}"
+        - "{{PARAM_2}}"
+      returns: "{{RETURN_TYPE_1}}"
+    - name: "{{METHOD_NAME_2}}"
+      parameters:
+        - "{{PARAM_3}}"
+      returns: "{{RETURN_TYPE_2}}"
+
+# -----------------------------------------------------------------------------
+# DATABASE MAPPING
+# -----------------------------------------------------------------------------
+# Database table configuration
+table:
+  # Table name in the database
+  name: "{{TABLE_NAME}}"
+  # Schema name (if applicable)
+  schema: "{{SCHEMA_NAME}}"
+
+# -----------------------------------------------------------------------------
+# TIMESTAMPS
+# -----------------------------------------------------------------------------
+# Automatic timestamp fields
+timestamps:
+  # Field name for creation timestamp
+  created_at: "{{CREATED_AT_FIELD}}"
+  # Field name for update timestamp
+  updated_at: "{{UPDATED_AT_FIELD}}"
+  # Field name for soft delete timestamp (if using soft deletes)
+  deleted_at: "{{DELETED_AT_FIELD}}"
+
+# Does this entity use soft deletes?
+soft_delete: false
+
+# -----------------------------------------------------------------------------
+# EXTRACTION METADATA
+# -----------------------------------------------------------------------------
+# All source files that were analyzed to extract this specification
+extracted_from:
+  - "{{SOURCE_FILE_1}}"
+  - "{{SOURCE_FILE_2}}"
+  - "{{SOURCE_FILE_3}}"
