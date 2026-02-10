@@ -263,9 +263,6 @@ No context yet - feature not started.
 | 2026-01-16 | - | - | - | Updated to new completion signal format |
 
 ### Modified Files (Auto-tracked)
-- /home/user/rector-with-init/.ai/project/features/editorial-refactoring/30_tasks_backend.md (2026-02-10T22:07:14+00:00)
-- /home/user/rector-with-init/.ai/project/features/editorial-refactoring/12_specs.md (2026-02-10T22:06:07+00:00)
-- /home/user/rector-with-init/.ai/project/features/editorial-refactoring/FEATURE_editorial-refactoring.md (2026-02-10T22:04:03+00:00)
 - /home/user/workflow/.ai/project/analysis/soul-md-analysis.md (2026-02-10T18:00:23+00:00)
 - /home/user/workflow/README.md (2026-02-09T02:39:35+00:00)
 - /home/user/workflow/INDEX.md (2026-02-09T02:38:39+00:00)

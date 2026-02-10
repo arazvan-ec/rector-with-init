@@ -158,3 +158,392 @@
     "description": "Check uncommitted changes"
   }
 }
+{
+  "timestamp": "2026-02-10T21:38:09+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git add .ai/logs/audit_20260210.json .ai/logs/session_20260210.log .ai/snapshots/auto_FEATURE_X_20260210_210141/ .ai/snapshots/auto_FEATURE_X_20260210_213751/ && git commit -m \"$(cat <<'EOF'\nUpdate session logs and workflow snapshots\n\nhttps://claude.ai/code/session_01WsFssVLMZCKbRY1KYH37XM\nEOF\n)\"",
+    "description": "Stage and commit pending changes"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:38:17+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git push -u origin claude/workflow-next-step-kgOhO",
+    "description": "Push to remote branch"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:16+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init -type f -name \"CLAUDE.md\" | head -20",
+    "description": "Locate all CLAUDE.md files in the project"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:21+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init -type f -name \"*.php\" | grep -i editorial | head -50"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:29+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init/plugins/multi-agent-workflow/commands -name \"*.md\" | head -20",
+    "description": "List all workflow command files"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:30+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init/plugins/multi-agent-workflow/skills -name \"SKILL.md\" | wc -l",
+    "description": "Count skill definition files"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:34+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init/src -type f -name \"*.php\" | grep -E \"(Dto|DTO)\" | head -50"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:34+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init/src -type d | head -30"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:37+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init -name \"*.json\" -path \"*plugin*\" -o -name \"*.yaml\" -path \"*plugin*\" | grep -v node_modules | head -20",
+    "description": "Find plugin configuration files"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:43+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init/plugins/multi-agent-workflow/commands -type f -name \"*.md\" | sort",
+    "description": "List all workflow command definition files"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:44+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init/plugins/multi-agent-workflow/skills -type f -name \"SKILL.md\" | sort",
+    "description": "List all skill definitions"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:46+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init -type f -name \"*QueryEditorialClient*\" -o -name \"*QuerySectionClient*\" -o -name \"*QueryMultimediaClient*\" -o -name \"*QueryTagClient*\" -o -name \"*QueryJournalistClient*\" -o -name \"*QueryMembershipClient*\" | head -20"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:54+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init -type f -name \"*.php\" -path \"*/Domain/Model/*Client*\" 2>/dev/null | head -20"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:54+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "grep -r \"workflow.*router\\|router.*command\\|/workflows:route\" /home/user/rector-with-init/plugins/multi-agent-workflow/CLAUDE.md 2>/dev/null | head -20",
+    "description": "Search for router references in main CLAUDE.md"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:54+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "grep -r \"QueryEditorialClient\\|QuerySectionClient\\|QueryMultimediaClient\\|QueryTagClient\\|QueryJournalistClient\\|QueryMembershipClient\" /home/user/rector-with-init/src --include=\"*.php\" -l | head -20"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:43:54+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "ls -la /home/user/rector-with-init/plugins/multi-agent-workflow/commands/workflows/ | grep -E \"\\.md$\"",
+    "description": "List workflow command files"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:44:12+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "ls -la /home/user/rector-with-init/src/Application/DataTransformer/Apps/Body/*.php | head -20"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:44:55+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init/src/Application/DataTransformer/Apps/Media -type f -name \"*.php\" | sort"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:45:07+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init/tests -type f -name \"*Editorial*\" -o -name \"*Orchestrator*\" | head -30"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:45:08+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "ls -la /home/user/rector-with-init/src/Application/DataTransformer/Apps/Body/ | grep -E \"\\.php$\" | wc -l"
+  }
+}
+{
+  "timestamp": "2026-02-10T21:45:08+00:00",
+  "session_id": "6e167c7b-75f8-4f2e-b8b6-eef10faa6a59",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "find /home/user/rector-with-init/src -type f -name \"*.php\" | grep -i editorial | wc -l"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:03:37+00:00",
+  "session_id": "f8825ce0-73c3-42e3-b747-8d96c39917c7",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "mkdir -p /home/user/rector-with-init/.ai/project/features/editorial-refactoring",
+    "description": "Create editorial refactoring feature directory"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:04:03+00:00",
+  "session_id": "f8825ce0-73c3-42e3-b747-8d96c39917c7",
+  "tool_name": "Write",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/FEATURE_editorial-refactoring.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/FEATURE_editorial-refactoring.md",
+    "content": "# Feature: Editorial Refactoring\n\n## Summary\n\nComprehensive refactoring of the editorial bounded context (~75 files) to improve async processing, eliminate code duplication, introduce proper DTOs, and decompose the monolithic EditorialOrchestrator into focused services.\n\n## Motivation\n\nThe current editorial flow works correctly but suffers from:\n1. **EditorialOrchestrator god class** (~590 lines, 10+ responsibilities)\n2. **Code duplication** across 3 patterns: URL generation, multimedia shots, editorial fetching\n3. **Weak type safety** with `array<string, mixed>` throughout transformers\n4. **Hardcoded configuration** for image sizes and aspect ratios\n5. **Suboptimal async handling** - not all operations parallelized\n\n## Scope\n\n### In Scope\n- Decompose `EditorialOrchestrator` into focused services\n- Extract shared services: `MultimediaShotService`, improved `UrlGeneratorTrait`\n- Introduce DTOs for transformer responses\n- Create `AspectRatio` enum and `ImageSize` value objects\n- Hybrid async strategy: Promises for critical data + Messenger for secondary ops\n- Extract `MembershipLinkResolver`, `InsertedNewsResolver`, `RecommendedEditorialsResolver`\n- Create `SignatureResolver` for journalist/alias lookup\n\n### Out of Scope\n- API response structure changes (100% backward compatible)\n- New API endpoints\n- Changes to external client interfaces (bundles)\n- Frontend/consumer changes\n\n## Constraints\n- **API backward compatibility**: JSON output must remain identical\n- **PHPStan Level 9**: All new code must pass strict static analysis\n- **79% MSI minimum**: Mutation testing threshold must be maintained\n- **PSR-12 + Symfony CS**: Coding standards enforced\n- **PHP 8.2+**: Use modern PHP features (enums, readonly, named args)\n\n## Decision Log\n\n| # | Decision | Choice | Rationale |\n|---|----------|--------|-----------|\n| 1 | Orchestrator decomposition | Services + max async | Enable parallel processing |\n| 2 | Code deduplication | Maximum cleanup | DRY principle, fewer bugs |\n| 3 | Type safety | Introduce DTOs | PHPStan L9 compliance, self-documenting |\n| 4 | Image config | Enums + Value Objects | Domain concept, not environment config |\n| 5 | Async strategy | Hybrid (Promises + Messenger) | Critical data via promises, secondary via Messenger |\n| 6 | API compatibility | 100% retrocompatible | Mobile apps depend on exact JSON structure |\n| 7 | Execution strategy | Specs first, then execute | Methodical, reviewable approach |\n| 8 | InsertedNews/Recommended | Two services + shared trait | SRP with DRY via trait |\n| 9 | Traits strategy | Hybrid: Multimedia->Service, URL->Trait | Complex logic as service, simple as trait |\n\n## Specs\n\n- [SPEC-01: Decompose EditorialOrchestrator](./12_specs.md#spec-01)\n- [SPEC-02: EditorialUrlBuilder](./12_specs.md#spec-02)\n- [SPEC-03: MultimediaShotService](./12_specs.md#spec-03)\n- [SPEC-04: Response DTOs](./12_specs.md#spec-04)\n- [SPEC-05: AspectRatio & ImageSize](./12_specs.md#spec-05)\n- [SPEC-06: Hybrid Async Strategy](./12_specs.md#spec-06)\n- [SPEC-07: MembershipLinkResolver](./12_specs.md#spec-07)\n\n## Execution Phases\n\nSee [30_tasks_backend.md](./30_tasks_backend.md) for detailed phase ordering.\n"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:06:07+00:00",
+  "session_id": "f8825ce0-73c3-42e3-b747-8d96c39917c7",
+  "tool_name": "Write",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/12_specs.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/12_specs.md",
+    "content": "# Functional Specs: Editorial Refactoring\n\n## SPEC-01: Decompose EditorialOrchestrator into Focused Services\n\n**Priority**: HIGH\n**Affects**: `src/Orchestrator/Chain/EditorialOrchestrator.php` (590 lines → ~150 lines)\n\n### Problem\n\n`EditorialOrchestrator::execute()` violates Single Responsibility with 10+ distinct responsibilities:\n1. Fetch editorial + validate visibility\n2. Fetch section\n3. Create membership link promises\n4. Process inserted news (fetch editorial, section, signatures, multimedia)\n5. Process recommended editorials (identical pattern to inserted news)\n6. Get opening multimedia\n7. Get async multimedia promises\n8. Retrieve photos from body tags\n9. Fetch tags\n10. Fetch comments\n11. Build editorial signatures\n12. Resolve membership promises\n13. Transform body, multimedia, standfirst, recommended\n\n### Solution\n\nExtract 5 new services. The orchestrator becomes a coordinator:\n\n```\nEditorialOrchestrator (coordinator, ~150 lines)\n├── InsertedNewsResolver          (responsibility 4)\n├── RecommendedEditorialsResolver (responsibility 5)\n├── MembershipLinkResolver        (responsibilities 3, 12)\n├── SignatureResolver             (responsibility 11, shared with 4, 5)\n└── MultimediaResolver            (responsibilities 6, 7, 8)\n```\n\n### New Class: `InsertedNewsResolver`\n\n**Location**: `src/Orchestrator/Chain/Resolver/InsertedNewsResolver.php`\n**Responsibility**: Fetch, validate, and enrich all inserted news from the editorial body.\n\n```php\nfinal readonly class InsertedNewsResolver\n{\n    public function __construct(\n        private QueryEditorialClient $queryEditorialClient,\n        private QuerySectionClient $querySectionClient,\n        private SignatureResolver $signatureResolver,\n        private MultimediaResolver $multimediaResolver,\n        private LoggerInterface $logger,\n    ) {}\n\n    /**\n     * @return array<string, InsertedNewsData>\n     */\n    public function resolve(Body $body): array;\n}\n```\n\n**Uses**: `RelatedEditorialTrait` for shared fetch+validate+enrich pattern.\n\n### New Class: `RecommendedEditorialsResolver`\n\n**Location**: `src/Orchestrator/Chain/Resolver/RecommendedEditorialsResolver.php`\n**Responsibility**: Fetch, validate, and enrich all recommended editorials.\n\n```php\nfinal readonly class RecommendedEditorialsResolver\n{\n    public function __construct(\n        private QueryEditorialClient $queryEditorialClient,\n        private QuerySectionClient $querySectionClient,\n        private SignatureResolver $signatureResolver,\n        private MultimediaResolver $multimediaResolver,\n        private LoggerInterface $logger,\n    ) {}\n\n    /**\n     * @return array<string, RecommendedEditorialData>\n     */\n    public function resolve(RecommendedEditorials $recommendedEditorials): array;\n}\n```\n\n**Uses**: `RelatedEditorialTrait` for shared pattern.\n\n### New Trait: `RelatedEditorialTrait`\n\n**Location**: `src/Orchestrator/Chain/Resolver/Trait/RelatedEditorialTrait.php`\n**Responsibility**: Shared logic for fetching editorial → checking visibility → resolving signatures → resolving multimedia.\n\n```php\ntrait RelatedEditorialTrait\n{\n    /**\n     * Fetches an editorial, checks visibility, resolves signatures and multimedia.\n     * Returns null if editorial is not visible.\n     */\n    private function resolveRelatedEditorial(\n        string $editorialId,\n        QueryEditorialClient $queryEditorialClient,\n        QuerySectionClient $querySectionClient,\n        SignatureResolver $signatureResolver,\n        MultimediaResolver $multimediaResolver,\n    ): ?RelatedEditorialData;\n}\n```\n\n### New Class: `SignatureResolver`\n\n**Location**: `src/Orchestrator/Chain/Resolver/SignatureResolver.php`\n**Responsibility**: Resolve journalist signatures from alias IDs.\n\n```php\nfinal readonly class SignatureResolver\n{\n    public function __construct(\n        private QueryJournalistClient $queryJournalistClient,\n        private JournalistFactory $journalistFactory,\n        private JournalistsDataTransformer $journalistsDataTransformer,\n        private LoggerInterface $logger,\n    ) {}\n\n    /**\n     * @param Signatures $signatures\n     * @return array<int, array<string, mixed>>\n     */\n    public function resolve(Signatures $signatures, Section $section, bool $hasTwitter = false): array;\n\n    /**\n     * @return array<string, mixed>\n     */\n    public function resolveAlias(string $aliasId, Section $section, bool $hasTwitter = false): array;\n}\n```\n\n**Eliminates**: Duplication of `retrieveAliasFormat()` logic in orchestrator lines 281-296, and signature loops in lines 136-143, 178-184, 243-253.\n\n### New Class: `MultimediaResolver`\n\n**Location**: `src/Orchestrator/Chain/Resolver/MultimediaResolver.php`\n**Responsibility**: Handle all async multimedia fetching, promise resolution, and body tag photo retrieval.\n\n```php\nfinal readonly class MultimediaResolver\n{\n    public function __construct(\n        private QueryMultimediaClient $queryMultimediaClient,\n        private QueryMultimediaOpeningClient $queryMultimediaOpeningClient,\n        private MultimediaOrchestratorHandler $multimediaTypeOrchestratorHandler,\n        private LoggerInterface $logger,\n    ) {}\n\n    /**\n     * Fetch multimedia asynchronously, resolve promises, return resolved data.\n     */\n    public function resolveAsync(Multimedia $multimedia): array;\n\n    public function resolveOpening(Editorial $editorial): array;\n\n    public function resolveBodyTagPhotos(Body $body): array;\n\n    public function resolveMetaImage(Editorial $editorial): array;\n}\n```\n\n**Eliminates**: Methods `getAsyncMultimedia()`, `getOpening()`, `getMetaImage()`, `retrievePhotosFromBodyTags()`, `addPhotoToArray()`, `fulfilledMultimedia()`, `createCallback()` from the orchestrator.\n\n### Refactored EditorialOrchestrator\n\nAfter extraction, the orchestrator becomes a pure coordinator (~150 lines):\n\n```php\npublic function execute(Request $request): array\n{\n    $editorial = $this->fetchAndValidateEditorial($id);\n    $section = $this->querySectionClient->findSectionById($editorial->sectionId());\n\n    // Parallel resolution of independent data\n    $membershipPromise = $this->membershipLinkResolver->createPromise($editorial, $section->siteId());\n    $insertedNews = $this->insertedNewsResolver->resolve($editorial->body());\n    $recommended = $this->recommendedEditorialsResolver->resolve($editorial->recommendedEditorials());\n    $multimediaData = $this->multimediaResolver->resolveAll($editorial);\n    $tags = $this->tagResolver->resolve($editorial->tags());\n\n    // Transform and build response\n    $result = $this->buildResponse($editorial, $section, $tags, ...);\n\n    return $result;\n}\n```\n\n### Acceptance Criteria\n\n- [ ] `EditorialOrchestrator` reduced to ≤ 150 lines\n- [ ] 5 new resolver services created with proper interfaces\n- [ ] `RelatedEditorialTrait` shared between `InsertedNewsResolver` and `RecommendedEditorialsResolver`\n- [ ] Constructor injection only (no setters, no `@required`)\n- [ ] All services tagged and autowired\n- [ ] Existing tests pass without changes to assertions (API compat)\n- [ ] New unit tests for each resolver service\n- [ ] PHPStan Level 9 clean\n- [ ] Zero `@phpstan-ignore` annotations in new code\n\n### Open Questions\n\n> **Q1**: Should the resolvers return DTOs (from SPEC-04) directly, or raw arrays that the orchestrator passes to transformers? If DTOs, the resolvers become part of the application layer. If arrays, they stay in the orchestrator layer.\n>\n> **Recommendation**: Resolvers return domain-level data structures (DTOs from SPEC-04). The orchestrator coordinates resolvers and transformers as separate steps. This aligns with DDD layers.\n\n---\n\n## SPEC-02: Improve UrlGeneratorTrait and Extract EditorialUrlBuilder\n\n**Priority**: MEDIUM\n**Affects**: 3 files with identical `editorialUrl()` method\n\n### Problem\n\nIdentical `editorialUrl()` implementation in:\n1. `DetailsAppsDataTransformer.php:105-121`\n2. `BodyTagInsertedNewsDataTransformer.php:88-104`\n3. `RecommendedEditorialsDataTransformer.php:96-112`\n\nAll three have the exact same code:\n```php\nprivate function editorialUrl(Editorial $editorial, Section $section): string\n{\n    $editorialPath = sprintf('%s/%s/%s_%s',\n        $section->getPath(),\n        $editorial->publicationDate()->format('Y-m-d'),\n        Encode::encodeUrl($editorial->editorialTitles()->urlTitle()),\n        $editorial->id()->id()\n    );\n    return $this->generateUrl('https://%s.%s.%s/%s',\n        $section->isSubdomainBlog() ? 'blog' : 'www',\n        $section->siteId(),\n        $editorialPath\n    );\n}\n```\n\n### Solution\n\n**Keep `UrlGeneratorTrait`** (decision: simple logic stays as trait) but improve it:\n\n1. Add `editorialUrl(Editorial, Section): string` method to the trait\n2. Remove the 3 duplicate private implementations\n3. Add `journalistUrl(Journalist, Section): string` from `JournalistsDataTransformer`\n4. Add `tagUrl(Tag, Section): string` from `DetailsAppsDataTransformer`\n\n### Updated UrlGeneratorTrait\n\n```php\ntrait UrlGeneratorTrait\n{\n    private string $extension;\n\n    private function setExtension(string $extension): void { ... }\n\n    protected function generateUrl(string $format, string $subdomain, string $siteId, string $urlPath): string { ... }\n\n    protected function editorialUrl(Editorial $editorial, Section $section): string\n    {\n        $editorialPath = sprintf('%s/%s/%s_%s',\n            $section->getPath(),\n            $editorial->publicationDate()->format('Y-m-d'),\n            Encode::encodeUrl($editorial->editorialTitles()->urlTitle()),\n            $editorial->id()->id()\n        );\n        return $this->generateUrl(\n            'https://%s.%s.%s/%s',\n            $section->isSubdomainBlog() ? 'blog' : 'www',\n            $section->siteId(),\n            $editorialPath\n        );\n    }\n\n    protected function sectionUrl(Section $section): string { ... }\n}\n```\n\n### Acceptance Criteria\n\n- [ ] `editorialUrl()` exists in ONE place only (the trait)\n- [ ] 3 private `editorialUrl()` methods removed from transformers\n- [ ] `sectionUrl()` extracted from `DetailsAppsDataTransformer::transformerSection()`\n- [ ] All usages updated to use the trait method\n- [ ] Tests pass unchanged\n- [ ] PHPStan Level 9 clean\n\n---\n\n## SPEC-03: MultimediaShotService (Extract from Trait)\n\n**Priority**: HIGH\n**Affects**: `MultimediaTrait` + `DetailsMultimediaPhotoDataTransformer` + 3 consumers\n\n### Problem\n\nShot generation logic duplicated across:\n1. `MultimediaTrait::getShotsLandscape()` - for body tags (3 sizes: 202w, 144w, 128w)\n2. `MultimediaTrait::getShotsLandscapeFromMedia()` - same logic, different input format\n3. `DetailsMultimediaPhotoDataTransformer::read()` - for opening multimedia (50+ sizes across 5 aspect ratios)\n4. `BodyTagPictureDataTransformer` - uses `MultimediaTrait`\n\nAll share the same Thumbor crop pattern but with different size configurations.\n\n### Solution\n\nCreate `MultimediaShotService` as an injectable service (decision: complex logic → service):\n\n**Location**: `src/Infrastructure/Service/MultimediaShotService.php`\n\n```php\nfinal readonly class MultimediaShotService\n{\n    public function __construct(\n        private Thumbor $thumbor,\n    ) {}\n\n    /**\n     * Generate landscape shots (3 sizes, 4:3 ratio) for listings/thumbnails.\n     * Used by: recommended editorials, inserted news, body tag pictures.\n     *\n     * @return array<string, string> Map of size label => Thumbor URL\n     */\n    public function generateLandscapeShots(string $file, Clippings $clippings): array;\n\n    /**\n     * Generate landscape shots from media opening data.\n     *\n     * @param array{opening: MultimediaPhoto, resource: Photo} $multimediaOpening\n     * @return array<string, string>\n     */\n    public function generateLandscapeShotsFromMedia(array $multimediaOpening): array;\n\n    /**\n     * Generate responsive shots for all aspect ratios (opening multimedia).\n     * Used by: DetailsMultimediaPhotoDataTransformer.\n     *\n     * @return array<string, array<string, string>> Map of aspectRatio => (size => URL)\n     */\n    public function generateResponsiveShots(\n        string $file,\n        Clippings $clippings,\n        AspectRatio $aspectRatio = null,\n    ): array;\n\n    /**\n     * Generate journalist photo URL.\n     */\n    public function generateJournalistPhoto(Journalist $journalist): string;\n}\n```\n\n### Migration\n\n| Before | After |\n|--------|-------|\n| `$this->getShotsLandscape($multimedia)` | `$this->multimediaShotService->generateLandscapeShots($multimedia->file(), $multimedia->clippings())` |\n| `$this->getShotsLandscapeFromMedia($data)` | `$this->multimediaShotService->generateLandscapeShotsFromMedia($data)` |\n| `DetailsMultimediaPhotoDataTransformer::SIZES_RELATIONS` + inline loop | `$this->multimediaShotService->generateResponsiveShots(...)` |\n| `$this->thumbor->createJournalistImage()` | `$this->multimediaShotService->generateJournalistPhoto($journalist)` |\n\n### MultimediaTrait Removal\n\nAfter extracting to `MultimediaShotService`:\n- Remove `MultimediaTrait` entirely\n- All classes that `use MultimediaTrait` now inject `MultimediaShotService`\n- Affected classes: `EditorialOrchestrator`, `RecommendedEditorialsDataTransformer`, `BodyTagInsertedNewsDataTransformer`, `BodyTagPictureDataTransformer`, `DetailsMultimediaPhotoDataTransformer`\n\n### Acceptance Criteria\n\n- [ ] `MultimediaShotService` created as injectable service\n- [ ] `MultimediaTrait` removed completely\n- [ ] `DetailsMultimediaPhotoDataTransformer::SIZES_RELATIONS` moved to service (uses SPEC-05 value objects)\n- [ ] All shot generation goes through the service\n- [ ] `$sizes` array (202w, 144w, 128w) moved to `ImageSizeCollection` value object (SPEC-05)\n- [ ] Thumbor interactions centralized in one service\n- [ ] Unit tests for `MultimediaShotService` with all generation methods\n- [ ] PHPStan Level 9 clean\n\n---\n\n## SPEC-04: Response DTOs for Transformers\n\n**Priority**: MEDIUM\n**Affects**: All transformers returning `array<string, mixed>`\n\n### Problem\n\nAll transformers return untyped arrays (`array<string, mixed>`):\n- No compile-time validation of response structure\n- `@phpstan-ignore` annotations throughout\n- Easy to forget fields or introduce typos\n- No IDE autocomplete for response building\n\n### Solution\n\nCreate DTOs that match the current JSON response structure (100% backward compatible):\n\n**Location**: `src/Application/DTO/`\n\n### DTOs\n\n```php\n// src/Application/DTO/EditorialResponse.php\nfinal readonly class EditorialResponse\n{\n    public function __construct(\n        public string $id,\n        public string $url,\n        public EditorialTitlesDto $titles,\n        public string $lead,\n        public string $publicationDate,\n        public string $updatedOn,\n        public string $endOn,\n        public EditorialTypeDto $type,\n        public bool $indexable,\n        public bool $deleted,\n        public bool $published,\n        public string $closingModeId,\n        public bool $commentable,\n        public bool $isBrand,\n        public bool $isAmazonOnsite,\n        public string $contentType,\n        public string $canonicalEditorialId,\n        public string $urlDate,\n        public int $countWords,\n        public int $countComments,\n        public SectionDto $section,\n        /** @var TagDto[] */\n        public array $tags,\n        /** @var SectionDto[] */\n        public array $adsOptions,\n        /** @var SectionDto[] */\n        public array $analiticsOptions,\n        /** @var SignatureDto[] */\n        public array $signatures,\n        /** @var BodyElementDto[] */\n        public array $body,\n        public ?MultimediaResponseDto $multimedia,\n        /** @var BodyElementDto[] */\n        public array $standfirst,\n        /** @var RecommendedEditorialDto[] */\n        public array $recommendedEditorials,\n    ) {}\n\n    /**\n     * @return array<string, mixed>\n     */\n    public function toArray(): array;\n}\n\n// src/Application/DTO/SignatureDto.php\nfinal readonly class SignatureDto\n{\n    public function __construct(\n        public string $journalistId,\n        public string $aliasId,\n        public string $name,\n        public bool $private,\n        public string $url,\n        public string $photo,\n        /** @var DepartmentDto[] */\n        public array $departments,\n        public ?string $twitter = null,\n    ) {}\n}\n\n// src/Application/DTO/MultimediaResponseDto.php\nfinal readonly class MultimediaResponseDto\n{\n    public function __construct(\n        public string $id,\n        public string $type,\n        public string $caption,\n        public object $shots,\n        public string $photo,\n    ) {}\n}\n\n// src/Application/DTO/RecommendedEditorialDto.php\nfinal readonly class RecommendedEditorialDto\n{\n    public function __construct(\n        public string $type,\n        public string $editorialId,\n        /** @var SignatureDto[] */\n        public array $signatures,\n        public string $editorial, // URL\n        public string $title,\n        /** @var array<string, string> */\n        public array $shots,\n        public string $photo,\n    ) {}\n}\n```\n\n### Additional DTOs\n\n- `EditorialTitlesDto` (title, preTitle, urlTitle, mobileTitle)\n- `EditorialTypeDto` (id, name)\n- `SectionDto` (id, name, url, encodeName)\n- `TagDto` (id, name, url)\n- `DepartmentDto` (id, name)\n- `BodyElementDto` (type + dynamic fields per element type, union type)\n- `InsertedNewsData` (editorial, section, signatures, multimediaId) - for resolver internal use\n\n### Backward Compatibility Strategy\n\nEach DTO implements `toArray(): array` that produces the **exact same structure** as the current arrays. The orchestrator calls `$response->toArray()` at the final step.\n\n```php\n// In EditorialOrchestrator::execute()\n$response = new EditorialResponse(...);\nreturn $response->toArray(); // Identical JSON output\n```\n\n### Acceptance Criteria\n\n- [ ] At least 10 DTOs created covering the editorial response\n- [ ] All DTOs are `final readonly` with constructor promotion\n- [ ] Each DTO has `toArray()` producing backward-compatible output\n- [ ] Transformers return DTOs instead of arrays\n- [ ] `@phpstan-ignore` annotations reduced by ≥ 80%\n- [ ] JSON response byte-identical to current output (verified by existing integration tests)\n- [ ] PHPStan Level 9 clean with zero `mixed` types in DTOs\n\n### Open Questions\n\n> **Q2**: Should `BodyElementDto` be an abstract class with subclasses per body element type (ParagraphDto, SubHeadDto, etc.)? Or a single class with a `type` discriminator and optional fields?\n>\n> **Recommendation**: Single `BodyElementDto` with type discriminator. Creating 18 subclasses would add complexity without much benefit since the JSON structure is flat. The `toArray()` method already handles the differences in the transformer layer.\n\n---\n\n## SPEC-05: AspectRatio Enum & ImageSize Value Objects\n\n**Priority**: LOW\n**Affects**: `DetailsMultimediaPhotoDataTransformer`, `MultimediaTrait`, new `MultimediaShotService`\n\n### Problem\n\nImage sizes and aspect ratios are hardcoded as PHP arrays and string constants:\n- `SIZES_RELATIONS` constant in `DetailsMultimediaPhotoDataTransformer` (50+ entries)\n- `$sizes` array in `MultimediaTrait` (3 entries)\n- String constants like `'16:9'`, `'4:3'` scattered in code\n\n### Solution\n\n#### AspectRatio Enum\n\n**Location**: `src/Infrastructure/Enum/AspectRatioEnum.php`\n\n```php\nenum AspectRatioEnum: string\n{\n    case RATIO_16_9 = '16:9';\n    case RATIO_4_3 = '4:3';\n    case RATIO_3_2 = '3:2';\n    case RATIO_2_3 = '2:3';\n    case RATIO_3_4 = '3:4';\n\n    /**\n     * Returns the ClippingType associated with this aspect ratio for opening multimedia.\n     */\n    public function clippingType(): string;\n}\n```\n\n#### ImageSize Value Object\n\n**Location**: `src/Infrastructure/ValueObject/ImageSize.php`\n\n```php\nfinal readonly class ImageSize\n{\n    public function __construct(\n        public string $label,    // e.g., '1440w', '414w', 'lo-res'\n        public int $width,\n        public int $height,\n    ) {}\n}\n```\n\n#### ImageSizeCollection Value Object\n\n**Location**: `src/Infrastructure/ValueObject/ImageSizeCollection.php`\n\n```php\nfinal readonly class ImageSizeCollection\n{\n    /** @var ImageSize[] */\n    private array $sizes;\n\n    public static function landscape(): self;      // 202w, 144w, 128w\n    public static function responsive(): self;     // All 50+ sizes from SIZES_RELATIONS\n    public static function forAspectRatio(AspectRatioEnum $ratio): self;\n}\n```\n\n### Acceptance Criteria\n\n- [ ] `AspectRatioEnum` with 5 cases created\n- [ ] `ImageSize` value object with label/width/height\n- [ ] `ImageSizeCollection` with factory methods for each context\n- [ ] `SIZES_RELATIONS` constant removed from `DetailsMultimediaPhotoDataTransformer`\n- [ ] `$sizes` array removed from `MultimediaTrait` (which is also being removed per SPEC-03)\n- [ ] String constants replaced with enum cases\n- [ ] PHPStan Level 9 clean\n\n---\n\n## SPEC-06: Hybrid Async Strategy (Promises + Messenger)\n\n**Priority**: HIGH\n**Affects**: `EditorialOrchestrator`, new resolver services\n\n### Problem\n\nCurrent async handling:\n1. Guzzle promises for multimedia fetching (good)\n2. Sequential calls for inserted news, recommended editorials, tags (bad)\n3. Membership links via promise but resolved synchronously (mixed)\n4. No Symfony Messenger integration for secondary operations\n\n### Solution\n\n**Phase 1: Maximize Promise parallelization** (within current request):\n\n```\nCURRENT FLOW (sequential):                NEW FLOW (parallel where possible):\n\n1. Fetch editorial  ─────────────────→    1. Fetch editorial\n2. Fetch section    ─────────────────→    2. Fetch section\n3. Loop: inserted news (sequential)  →    3. PARALLEL:\n4. Loop: recommended (sequential)    →       ├── Inserted news promises (batch)\n5. Get opening multimedia            →       ├── Recommended promises (batch)\n6. Get async multimedia              →       ├── Opening multimedia\n7. Fetch tags (sequential loop)      →       ├── Async multimedia\n8. Fetch comments                    →       ├── Tags (batch)\n9. Build signatures                  →       ├── Comments\n10. Transform body                   →       └── Membership link promise\n11. Transform multimedia                  4. Resolve all promises\n12. Transform standfirst                  5. Build signatures (with resolved data)\n13. Transform recommended                 6. Transform all (body, multimedia, etc.)\n```\n\n**Phase 2: Symfony Messenger for secondary operations** (async, non-blocking):\n\nOperations that DON'T need to be in the response but enrich it:\n- Cache warming for related editorials\n- Pre-fetching recommended editorial multimedia\n- Analytics/metrics collection\n\n```php\n// New message for async pre-warming\nfinal readonly class WarmRelatedEditorialsCache\n{\n    public function __construct(\n        /** @var string[] */\n        public array $editorialIds,\n    ) {}\n}\n```\n\n### Detailed Promise Batching\n\nFor inserted news and recommended editorials, batch all external calls:\n\n```php\n// In InsertedNewsResolver\npublic function resolve(Body $body): array\n{\n    $insertedNewsElements = $body->bodyElementsOf(BodyTagInsertedNews::class);\n\n    // Phase 1: Batch fetch all editorials in parallel\n    $editorialPromises = [];\n    foreach ($insertedNewsElements as $element) {\n        $editorialPromises[$element->editorialId()->id()] =\n            $this->queryEditorialClient->findEditorialById($element->editorialId()->id(), async: true);\n    }\n    $editorials = Utils::settle($editorialPromises)->wait();\n\n    // Phase 2: For visible editorials, batch fetch sections and multimedia\n    $sectionPromises = [];\n    $multimediaPromises = [];\n    foreach ($editorials as $id => $result) {\n        if ($result['state'] === 'fulfilled' && $result['value']->isVisible()) {\n            $sectionPromises[$id] = $this->querySectionClient->findSectionById(\n                $result['value']->sectionId(), async: true\n            );\n            // ... multimedia promises\n        }\n    }\n\n    // Phase 3: Resolve and build\n    // ...\n}\n```\n\n### Acceptance Criteria\n\n- [ ] All independent external calls batched with promises\n- [ ] Inserted news editorials fetched in parallel (not sequentially in loop)\n- [ ] Recommended editorials fetched in parallel (not sequentially in loop)\n- [ ] Tags fetched in parallel (not sequentially in loop)\n- [ ] Symfony Messenger message class created for cache warming\n- [ ] Handler created for `WarmRelatedEditorialsCache`\n- [ ] Response time measurably improved (fewer sequential HTTP calls)\n- [ ] Error handling: individual promise failures don't crash the entire response\n- [ ] Circuit breaker pattern for external service failures (graceful degradation)\n\n### Open Questions\n\n> **Q3**: Do the external clients (`QueryEditorialClient`, `QuerySectionClient`, `QueryTagClient`) all support async mode? Currently only `QueryMultimediaClient` clearly uses `async: true`. If others don't support async, we'd need to add async support to those client bundles first.\n>\n> **This is a blocking question**: If external clients don't support async, Phase 1 parallelization is limited to multimedia only, and we'd need to work with the bundle teams.\n\n---\n\n## SPEC-07: MembershipLinkResolver Service\n\n**Priority**: MEDIUM\n**Affects**: `EditorialOrchestrator` (lines 345-419), `BodyTagMembershipCardDataTransformer`\n\n### Problem\n\nMembership link handling is split across:\n1. `getLinksFromBody()` → `getLinksOfBodyTagMembership()` in orchestrator\n2. `getPromiseMembershipLinks()` in orchestrator (creates promise)\n3. `resolvePromiseMembershipLinks()` in orchestrator (resolves promise)\n4. `retrieveButtons()` in `BodyTagMembershipCardDataTransformer` (applies resolved links)\n\nThis creates tight coupling between orchestrator and transformer through `resolveData['membershipLinkCombine']`.\n\n### Solution\n\n**Location**: `src/Orchestrator/Chain/Resolver/MembershipLinkResolver.php`\n\n```php\nfinal readonly class MembershipLinkResolver\n{\n    public function __construct(\n        private QueryMembershipClient $queryMembershipClient,\n        private UriFactoryInterface $uriFactory,\n    ) {}\n\n    /**\n     * Extract membership links from body and create async promise.\n     *\n     * @return MembershipLinkPromise Value object wrapping promise + original links\n     */\n    public function createPromise(Editorial $editorial, string $siteId): MembershipLinkPromise;\n\n    /**\n     * Resolve the promise and return link mapping.\n     *\n     * @return array<string, string> Map of original URL => resolved membership URL\n     */\n    public function resolve(MembershipLinkPromise $promise): array;\n}\n```\n\n#### MembershipLinkPromise Value Object\n\n```php\nfinal readonly class MembershipLinkPromise\n{\n    public function __construct(\n        public ?Promise $promise,\n        /** @var array<int, string> */\n        public array $originalLinks,\n    ) {}\n\n    public function hasLinks(): bool\n    {\n        return !empty($this->originalLinks);\n    }\n}\n```\n\n### Acceptance Criteria\n\n- [ ] `MembershipLinkResolver` created as injectable service\n- [ ] `MembershipLinkPromise` value object created\n- [ ] 5 methods removed from `EditorialOrchestrator`: `getLinksFromBody()`, `getLinksOfBodyTagMembership()`, `getPromiseMembershipLinks()`, `resolvePromiseMembershipLinks()`\n- [ ] `BodyTagMembershipCardDataTransformer` receives resolved links (not raw promise data)\n- [ ] Unit tests for resolver\n- [ ] PHPStan Level 9 clean\n"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:07:14+00:00",
+  "session_id": "f8825ce0-73c3-42e3-b747-8d96c39917c7",
+  "tool_name": "Write",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/30_tasks_backend.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/30_tasks_backend.md",
+    "content": "# Execution Phases: Editorial Refactoring\n\n## Dependency Graph\n\n```\nSPEC-05 (Enums/VOs)\n    │\n    ▼\nSPEC-03 (MultimediaShotService) ──────────┐\n    │                                      │\n    ▼                                      │\nSPEC-02 (UrlGeneratorTrait)               │\n    │                                      │\n    ▼                                      ▼\nSPEC-04 (DTOs) ◄───────────────── SPEC-07 (MembershipLinkResolver)\n    │                                      │\n    ▼                                      ▼\nSPEC-01 (Orchestrator decomposition) ◄─── SPEC-06 (Async strategy)\n```\n\n## Phase 1: Foundation Layer (No Breaking Changes)\n\n**Goal**: Create value objects, enums, and services that can coexist with existing code.\n\n### Task 1.1: Create AspectRatio Enum (SPEC-05)\n- **File**: `src/Infrastructure/Enum/AspectRatioEnum.php`\n- **Test**: `tests/Infrastructure/Enum/AspectRatioEnumTest.php`\n- **Risk**: None - new file, no existing code changes\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 1.2: Create ImageSize & ImageSizeCollection Value Objects (SPEC-05)\n- **Files**:\n  - `src/Infrastructure/ValueObject/ImageSize.php`\n  - `src/Infrastructure/ValueObject/ImageSizeCollection.php`\n- **Tests**:\n  - `tests/Infrastructure/ValueObject/ImageSizeTest.php`\n  - `tests/Infrastructure/ValueObject/ImageSizeCollectionTest.php`\n- **Risk**: None - new files\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 1.3: Create MultimediaShotService (SPEC-03)\n- **File**: `src/Infrastructure/Service/MultimediaShotService.php`\n- **Test**: `tests/Infrastructure/Service/MultimediaShotServiceTest.php`\n- **Dependencies**: Task 1.1, Task 1.2\n- **Risk**: None - new file, coexists with `MultimediaTrait`\n- **Verify**: `make test_unit && make test_stan`\n\n### Phase 1 Checkpoint\n- [ ] All new files created and tested\n- [ ] No existing files modified yet\n- [ ] `make tests` passes (full suite)\n- [ ] New code at 100% mutation coverage\n\n---\n\n## Phase 2: Shared Infrastructure (Backward-Compatible Refactoring)\n\n**Goal**: Migrate existing code to use new services while maintaining exact same behavior.\n\n### Task 2.1: Improve UrlGeneratorTrait (SPEC-02)\n- **File**: `src/Infrastructure/Trait/UrlGeneratorTrait.php` (modify)\n- **Changes**: Add `editorialUrl()`, `sectionUrl()` to the trait\n- **Risk**: LOW - extending a trait, not breaking existing usage\n- **Verify**: `make test_unit`\n\n### Task 2.2: Remove Duplicate editorialUrl() from Transformers (SPEC-02)\n- **Files** (modify):\n  - `src/Application/DataTransformer/Apps/DetailsAppsDataTransformer.php`\n  - `src/Application/DataTransformer/Apps/Body/BodyTagInsertedNewsDataTransformer.php`\n  - `src/Application/DataTransformer/Apps/RecommendedEditorialsDataTransformer.php`\n- **Dependencies**: Task 2.1\n- **Risk**: MEDIUM - modifying 3 files, must verify output identity\n- **Verify**: `make test_unit` (existing tests must pass unchanged)\n\n### Task 2.3: Migrate MultimediaTrait Users to MultimediaShotService (SPEC-03)\n- **Files** (modify):\n  - `src/Application/DataTransformer/Apps/RecommendedEditorialsDataTransformer.php`\n  - `src/Application/DataTransformer/Apps/Body/BodyTagInsertedNewsDataTransformer.php`\n  - `src/Application/DataTransformer/Apps/Body/BodyTagPictureDataTransformer.php`\n  - `src/Application/DataTransformer/Apps/Media/DataTransformers/DetailsMultimediaPhotoDataTransformer.php`\n  - `src/Application/DataTransformer/Apps/JournalistsDataTransformer.php`\n- **Dependencies**: Task 1.3\n- **Risk**: MEDIUM - modifying 5 files, must verify Thumbor URLs identical\n- **Verify**: `make test_unit` (all existing tests)\n\n### Task 2.4: Remove MultimediaTrait (SPEC-03)\n- **File**: Delete `src/Infrastructure/Trait/MultimediaTrait.php`\n- **Dependencies**: Task 2.3 (all consumers migrated)\n- **Risk**: LOW if Task 2.3 fully complete\n- **Verify**: `make test_unit && make test_stan`\n\n### Phase 2 Checkpoint\n- [ ] `UrlGeneratorTrait` improved with `editorialUrl()`\n- [ ] 3 duplicate `editorialUrl()` methods removed\n- [ ] `MultimediaTrait` removed, all consumers use `MultimediaShotService`\n- [ ] `make tests` passes (full suite)\n- [ ] Existing test assertions unchanged\n\n---\n\n## Phase 3: DTOs (Internal Type Safety)\n\n**Goal**: Introduce DTOs. Transformers produce DTOs internally, `toArray()` at boundaries.\n\n### Task 3.1: Create Core DTOs (SPEC-04)\n- **Files**:\n  - `src/Application/DTO/EditorialResponse.php`\n  - `src/Application/DTO/EditorialTitlesDto.php`\n  - `src/Application/DTO/EditorialTypeDto.php`\n  - `src/Application/DTO/SectionDto.php`\n  - `src/Application/DTO/TagDto.php`\n  - `src/Application/DTO/SignatureDto.php`\n  - `src/Application/DTO/DepartmentDto.php`\n  - `src/Application/DTO/MultimediaResponseDto.php`\n  - `src/Application/DTO/RecommendedEditorialDto.php`\n- **Tests**: One test per DTO verifying `toArray()` output\n- **Risk**: None - new files\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 3.2: Create Resolver Data DTOs (SPEC-04 + SPEC-01)\n- **Files**:\n  - `src/Application/DTO/InsertedNewsData.php`\n  - `src/Application/DTO/RecommendedEditorialData.php`\n  - `src/Application/DTO/RelatedEditorialData.php`\n  - `src/Orchestrator/Chain/Resolver/MembershipLinkPromise.php`\n- **Risk**: None - new files\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 3.3: Migrate Transformers to Return DTOs (SPEC-04)\n- **Files** (modify): All transformer `read()` methods\n- **Strategy**: Return DTO objects, but the **caller** calls `toArray()` where needed\n- **Dependencies**: Task 3.1\n- **Risk**: HIGH - touching many files, need careful testing\n- **Verify**: `make test_unit` (must verify JSON output unchanged)\n\n### Phase 3 Checkpoint\n- [ ] All DTOs created with `toArray()`\n- [ ] Transformers return DTOs\n- [ ] `@phpstan-ignore` annotations reduced by ≥ 80%\n- [ ] `make tests` passes (full suite)\n- [ ] JSON output byte-identical to before\n\n---\n\n## Phase 4: Service Extraction (Orchestrator Decomposition)\n\n**Goal**: Extract resolver services from the orchestrator.\n\n### Task 4.1: Create SignatureResolver (SPEC-01)\n- **File**: `src/Orchestrator/Chain/Resolver/SignatureResolver.php`\n- **Test**: `tests/Orchestrator/Chain/Resolver/SignatureResolverTest.php`\n- **Risk**: None - new file\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 4.2: Create MembershipLinkResolver (SPEC-07)\n- **File**: `src/Orchestrator/Chain/Resolver/MembershipLinkResolver.php`\n- **Test**: `tests/Orchestrator/Chain/Resolver/MembershipLinkResolverTest.php`\n- **Dependencies**: Task 3.2 (MembershipLinkPromise DTO)\n- **Risk**: None - new file\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 4.3: Create MultimediaResolver (SPEC-01)\n- **File**: `src/Orchestrator/Chain/Resolver/MultimediaResolver.php`\n- **Test**: `tests/Orchestrator/Chain/Resolver/MultimediaResolverTest.php`\n- **Risk**: None - new file\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 4.4: Create RelatedEditorialTrait (SPEC-01)\n- **File**: `src/Orchestrator/Chain/Resolver/Trait/RelatedEditorialTrait.php`\n- **Test**: Via InsertedNewsResolver and RecommendedEditorialsResolver tests\n- **Risk**: None - new file\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 4.5: Create InsertedNewsResolver (SPEC-01)\n- **File**: `src/Orchestrator/Chain/Resolver/InsertedNewsResolver.php`\n- **Test**: `tests/Orchestrator/Chain/Resolver/InsertedNewsResolverTest.php`\n- **Dependencies**: Task 4.1, Task 4.3, Task 4.4\n- **Risk**: None - new file\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 4.6: Create RecommendedEditorialsResolver (SPEC-01)\n- **File**: `src/Orchestrator/Chain/Resolver/RecommendedEditorialsResolver.php`\n- **Test**: `tests/Orchestrator/Chain/Resolver/RecommendedEditorialsResolverTest.php`\n- **Dependencies**: Task 4.1, Task 4.3, Task 4.4\n- **Risk**: None - new file\n- **Verify**: `make test_unit && make test_stan`\n\n### Task 4.7: Refactor EditorialOrchestrator (SPEC-01 - THE BIG ONE)\n- **File**: `src/Orchestrator/Chain/EditorialOrchestrator.php` (major rewrite)\n- **Dependencies**: Tasks 4.1-4.6 (all resolvers ready)\n- **Risk**: HIGH - core file rewrite, must maintain exact behavior\n- **Strategy**:\n  1. Inject new resolvers via constructor\n  2. Replace inline code with resolver calls one method at a time\n  3. Run tests after each replacement\n  4. Once all replaced, remove dead code\n- **Verify**: `make test_unit` after each step, `make tests` after completion\n\n### Phase 4 Checkpoint\n- [ ] 5 resolver services created + tested\n- [ ] `RelatedEditorialTrait` shared between 2 resolvers\n- [ ] `EditorialOrchestrator` ≤ 150 lines\n- [ ] `make tests` passes (full suite)\n- [ ] No `@phpstan-ignore` in new code\n\n---\n\n## Phase 5: Async Optimization (SPEC-06)\n\n**Goal**: Maximize parallelization and add Messenger integration.\n\n### Task 5.1: Add Promise Batching to InsertedNewsResolver\n- Batch all editorial fetches into parallel promises\n- Batch all section fetches for visible editorials\n- **Risk**: MEDIUM - depends on external client async support (see SPEC-06 Q3)\n\n### Task 5.2: Add Promise Batching to RecommendedEditorialsResolver\n- Same pattern as Task 5.1\n- **Risk**: MEDIUM\n\n### Task 5.3: Add Promise Batching for Tags\n- Fetch all tags in parallel instead of sequential loop\n- **Risk**: LOW\n\n### Task 5.4: Create Symfony Messenger Messages\n- `WarmRelatedEditorialsCache` message + handler\n- **Risk**: LOW - new files, non-blocking\n- **Verify**: `make test_unit && make test_stan`\n\n### Phase 5 Checkpoint\n- [ ] All independent external calls parallelized\n- [ ] Messenger integration for cache warming\n- [ ] `make tests` passes\n- [ ] Performance improvement measurable (fewer sequential HTTP calls)\n\n---\n\n## Phase 6: Cleanup & Verification\n\n### Task 6.1: Remove Dead Code\n- Any unused methods, imports, or constants\n- Remove `use MultimediaTrait` from all files (already done in Phase 2)\n\n### Task 6.2: Full Test Suite\n- `make tests` (all quality gates)\n- Verify 79% MSI threshold\n\n### Task 6.3: Documentation Update\n- Update `CLAUDE.md` architecture section if needed\n\n---\n\n## Risk Assessment\n\n| Phase | Risk Level | Mitigation |\n|-------|-----------|------------|\n| Phase 1 | LOW | New files only, no existing code changes |\n| Phase 2 | MEDIUM | Modify existing files, but one at a time with test verification |\n| Phase 3 | MEDIUM-HIGH | Many DTO files + transformer migrations, need careful `toArray()` testing |\n| Phase 4 | HIGH | Core orchestrator rewrite - incremental replacement with test per step |\n| Phase 5 | MEDIUM | Async changes - depends on external client capabilities |\n| Phase 6 | LOW | Cleanup only |\n\n## Estimated New Files\n\n| Category | Count | Examples |\n|----------|-------|---------|\n| Enums | 1 | AspectRatioEnum |\n| Value Objects | 2 | ImageSize, ImageSizeCollection |\n| Services | 2 | MultimediaShotService, MembershipLinkResolver |\n| Resolvers | 4 | Signature, Multimedia, InsertedNews, RecommendedEditorials |\n| Traits | 1 | RelatedEditorialTrait |\n| DTOs | 11 | EditorialResponse, SignatureDto, etc. |\n| Tests | ~15 | One per new class |\n| Messenger | 2 | Message + Handler |\n| **Total** | **~38** | New files |\n\n## Files Modified\n\n| File | Phase | Change Type |\n|------|-------|-------------|\n| `EditorialOrchestrator.php` | 4 | Major rewrite (590 → ~150 lines) |\n| `UrlGeneratorTrait.php` | 2 | Add methods |\n| `DetailsAppsDataTransformer.php` | 2, 3 | Remove duplicate URL, return DTO |\n| `BodyTagInsertedNewsDataTransformer.php` | 2, 3 | Remove duplicate URL + MultimediaTrait, return DTO |\n| `RecommendedEditorialsDataTransformer.php` | 2, 3 | Remove duplicate URL + MultimediaTrait, return DTO |\n| `BodyTagPictureDataTransformer.php` | 2, 3 | Remove MultimediaTrait, return DTO |\n| `DetailsMultimediaPhotoDataTransformer.php` | 2, 3 | Remove SIZES_RELATIONS + MultimediaTrait |\n| `JournalistsDataTransformer.php` | 2, 3 | Remove thumbor direct usage, return DTO |\n| `BodyTagMembershipCardDataTransformer.php` | 3 | Return DTO |\n| `MultimediaTrait.php` | 2 | **DELETED** |\n\n## Files Deleted\n\n| File | Phase | Reason |\n|------|-------|--------|\n| `src/Infrastructure/Trait/MultimediaTrait.php` | 2 | Replaced by MultimediaShotService |\n"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:07:27+00:00",
+  "session_id": "f8825ce0-73c3-42e3-b747-8d96c39917c7",
+  "tool_name": "Write",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/50_state.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/50_state.md",
+    "content": "# State: Editorial Refactoring\n\n## Current Phase: SPECS CREATED - AWAITING REVIEW\n\n## Progress\n\n| Phase | Status | Notes |\n|-------|--------|-------|\n| Phase 1: Foundation Layer | PENDING | Enums, VOs, MultimediaShotService |\n| Phase 2: Shared Infrastructure | PENDING | URL trait, remove MultimediaTrait |\n| Phase 3: DTOs | PENDING | Response DTOs for transformers |\n| Phase 4: Service Extraction | PENDING | Orchestrator decomposition |\n| Phase 5: Async Optimization | PENDING | Promise batching + Messenger |\n| Phase 6: Cleanup | PENDING | Dead code removal, final verification |\n\n## Specs Status\n\n| Spec | Status | Open Questions |\n|------|--------|---------------|\n| SPEC-01: Orchestrator Decomposition | WRITTEN | Q1: DTOs vs arrays in resolvers |\n| SPEC-02: UrlGeneratorTrait | WRITTEN | - |\n| SPEC-03: MultimediaShotService | WRITTEN | - |\n| SPEC-04: Response DTOs | WRITTEN | Q2: BodyElementDto subclasses? |\n| SPEC-05: AspectRatio & ImageSize | WRITTEN | - |\n| SPEC-06: Hybrid Async | WRITTEN | Q3: External clients async support? |\n| SPEC-07: MembershipLinkResolver | WRITTEN | - |\n\n## Open Questions Requiring User Input\n\n### Q1 (SPEC-01): Resolver Return Types\nShould resolvers return DTOs directly or raw arrays? Recommendation: DTOs (aligns with DDD layers).\n\n### Q2 (SPEC-04): BodyElementDto Design\nSingle class with type discriminator vs 18 subclasses? Recommendation: Single class (simpler).\n\n### Q3 (SPEC-06): External Client Async Support\nDo `QueryEditorialClient`, `QuerySectionClient`, `QueryTagClient` support async mode? This blocks Phase 5 parallelization.\n\n## Decision Log\n\nSee [FEATURE_editorial-refactoring.md](./FEATURE_editorial-refactoring.md) for full decision table.\n"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:11:27+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Edit",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/50_state.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/50_state.md",
+    "old_string": "## Open Questions Requiring User Input\n\n### Q1 (SPEC-01): Resolver Return Types\nShould resolvers return DTOs directly or raw arrays? Recommendation: DTOs (aligns with DDD layers).\n\n### Q2 (SPEC-04): BodyElementDto Design\nSingle class with type discriminator vs 18 subclasses? Recommendation: Single class (simpler).\n\n### Q3 (SPEC-06): External Client Async Support\nDo `QueryEditorialClient`, `QuerySectionClient`, `QueryTagClient` support async mode? This blocks Phase 5 parallelization.",
+    "new_string": "## Resolved Questions\n\n### Q1 (SPEC-01): Resolver Return Types\n**Answer**: DTOs. Resolvers return typed DTOs (InsertedNewsData, RecommendedEditorialData). Aligns with DDD layers.\n\n### Q2 (SPEC-04): BodyElementDto Design\n**Answer**: Single class with type discriminator. One BodyElementDto with optional fields, no 18 subclasses.\n\n### Q3 (SPEC-06): External Client Async Support\n**Answer**: All clients support async. QueryEditorialClient, QuerySectionClient, QueryTagClient all support `async: true`. Full parallelization possible in Phase 5.",
+    "replace_all": false
+  }
+}
+{
+  "timestamp": "2026-02-10T22:11:33+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Edit",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/50_state.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/50_state.md",
+    "old_string": "| SPEC-01: Orchestrator Decomposition | WRITTEN | Q1: DTOs vs arrays in resolvers |\n| SPEC-02: UrlGeneratorTrait | WRITTEN | - |\n| SPEC-03: MultimediaShotService | WRITTEN | - |\n| SPEC-04: Response DTOs | WRITTEN | Q2: BodyElementDto subclasses? |\n| SPEC-05: AspectRatio & ImageSize | WRITTEN | - |\n| SPEC-06: Hybrid Async | WRITTEN | Q3: External clients async support? |\n| SPEC-07: MembershipLinkResolver | WRITTEN | - |",
+    "new_string": "| SPEC-01: Orchestrator Decomposition | WRITTEN | Q1 RESOLVED: Resolvers return DTOs |\n| SPEC-02: UrlGeneratorTrait | WRITTEN | - |\n| SPEC-03: MultimediaShotService | WRITTEN | - |\n| SPEC-04: Response DTOs | WRITTEN | Q2 RESOLVED: Single BodyElementDto |\n| SPEC-05: AspectRatio & ImageSize | WRITTEN | - |\n| SPEC-06: Hybrid Async | WRITTEN | Q3 RESOLVED: All clients support async |\n| SPEC-07: MembershipLinkResolver | WRITTEN | - |",
+    "replace_all": false
+  }
+}
+{
+  "timestamp": "2026-02-10T22:11:41+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Edit",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/12_specs.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/12_specs.md",
+    "old_string": "> **Q1**: Should the resolvers return DTOs (from SPEC-04) directly, or raw arrays that the orchestrator passes to transformers? If DTOs, the resolvers become part of the application layer. If arrays, they stay in the orchestrator layer.\n>\n> **Recommendation**: Resolvers return domain-level data structures (DTOs from SPEC-04). The orchestrator coordinates resolvers and transformers as separate steps. This aligns with DDD layers.",
+    "new_string": "> **Q1 - RESOLVED**: Resolvers return DTOs (from SPEC-04) directly. The orchestrator coordinates resolvers and transformers as separate steps. This aligns with DDD layers. Confirmed by user.",
+    "replace_all": false
+  }
+}
+{
+  "timestamp": "2026-02-10T22:11:47+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Edit",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/12_specs.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/12_specs.md",
+    "old_string": "> **Q2**: Should `BodyElementDto` be an abstract class with subclasses per body element type (ParagraphDto, SubHeadDto, etc.)? Or a single class with a `type` discriminator and optional fields?\n>\n> **Recommendation**: Single `BodyElementDto` with type discriminator. Creating 18 subclasses would add complexity without much benefit since the JSON structure is flat. The `toArray()` method already handles the differences in the transformer layer.",
+    "new_string": "> **Q2 - RESOLVED**: Single `BodyElementDto` with type discriminator. Creating 18 subclasses would add complexity without much benefit since the JSON structure is flat. The `toArray()` method already handles the differences in the transformer layer. Confirmed by user.",
+    "replace_all": false
+  }
+}
+{
+  "timestamp": "2026-02-10T22:11:54+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Edit",
+  "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/12_specs.md",
+  "tool_input": {
+    "file_path": "/home/user/rector-with-init/.ai/project/features/editorial-refactoring/12_specs.md",
+    "old_string": "> **Q3**: Do the external clients (`QueryEditorialClient`, `QuerySectionClient`, `QueryTagClient`) all support async mode? Currently only `QueryMultimediaClient` clearly uses `async: true`. If others don't support async, we'd need to add async support to those client bundles first.\n>\n> **This is a blocking question**: If external clients don't support async, Phase 1 parallelization is limited to multimedia only, and we'd need to work with the bundle teams.",
+    "new_string": "> **Q3 - RESOLVED**: All external clients (QueryEditorialClient, QuerySectionClient, QueryTagClient) support async mode with `async: true`. Full parallelization is possible. Confirmed by user.",
+    "replace_all": false
+  }
+}
+{
+  "timestamp": "2026-02-10T22:12:05+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git checkout -b claude/workflow-next-step-kgOhO 2>/dev/null || git checkout claude/workflow-next-step-kgOhO",
+    "description": "Create or switch to feature branch"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:12:12+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git status",
+    "description": "Check git status"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:12:18+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git log --oneline -5",
+    "description": "View recent commit messages"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:12:27+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git add .ai/project/features/editorial-refactoring/FEATURE_editorial-refactoring.md .ai/project/features/editorial-refactoring/12_specs.md .ai/project/features/editorial-refactoring/30_tasks_backend.md .ai/project/features/editorial-refactoring/50_state.md",
+    "description": "Stage editorial refactoring spec files"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:12:34+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git diff --cached --stat",
+    "description": "View staged changes summary"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:12:46+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git commit -m \"$(cat <<'EOF'\nAdd editorial refactoring specs: 7 specs with 6-phase execution plan\n\nComprehensive analysis of the editorial bounded context (~75 files) identifying\nkey improvements: orchestrator decomposition, code deduplication, DTOs, value\nobjects, hybrid async strategy, and service extraction. All decisions documented\nwith user input. Specs ready for review before implementation.\n\nhttps://claude.ai/code/session_01WsFssVLMZCKbRY1KYH37XM\nEOF\n)\"",
+    "description": "Commit editorial refactoring specs"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:12:54+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git push -u origin claude/workflow-next-step-kgOhO",
+    "description": "Push specs to feature branch"
+  }
+}
+{
+  "timestamp": "2026-02-10T22:13:25+00:00",
+  "session_id": "079be41b-c507-4bdb-b6e0-adcb8193224e",
+  "tool_name": "Bash",
+  "file_path": "",
+  "tool_input": {
+    "command": "git status",
+    "description": "Check for uncommitted changes"
+  }
+}
