@@ -10,6 +10,7 @@ use App\Infrastructure\Enum\ClossingModeEnum;
 use App\Infrastructure\Enum\EditorialTypesEnum;
 use App\Infrastructure\Trait\UrlGeneratorTrait;
 use Ec\Editorial\Domain\Model\Editorial;
+use Ec\Encode\Encode;
 use Ec\Section\Domain\Model\Section;
 use Ec\Tag\Domain\Model\Tag;
 

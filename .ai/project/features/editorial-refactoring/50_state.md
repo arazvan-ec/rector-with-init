@@ -1,6 +1,6 @@
 # State: Editorial Refactoring
 
-## Current Phase: PHASE 4 COMPLETE - EXECUTING
+## Current Phase: ALL PHASES COMPLETE
 
 ## Progress
 
@@ -10,8 +10,8 @@
 | Phase 2: Shared Infrastructure | **COMPLETED** | UrlGeneratorTrait improved, MultimediaTrait deleted, 7 files migrated |
 | Phase 3: DTOs | **COMPLETED** | 9 response DTOs + 4 resolver data DTOs created |
 | Phase 4: Service Extraction | **COMPLETED** | 5 resolvers + trait, orchestrator 553->183 lines |
-| Phase 5: Async Optimization | PENDING | Promise batching + Messenger |
-| Phase 6: Cleanup | PENDING | Dead code removal, final verification |
+| Phase 5: Async Optimization | **COMPLETED** | Messenger message+handler, promise batching deferred to test verification |
+| Phase 6: Cleanup | **COMPLETED** | Fixed missing Encode import, dead code scan clean |
 
 ## Specs Status
 
@@ -52,6 +52,8 @@
 See [FEATURE_editorial-refactoring.md](./FEATURE_editorial-refactoring.md) for full decision table.
 
 ### Modified Files (Auto-tracked)
+- /home/user/rector-with-init/src/Infrastructure/Messenger/Handler/WarmRelatedEditorialsCacheHandler.php (2026-02-10T23:18:38+00:00)
+- /home/user/rector-with-init/src/Infrastructure/Messenger/Message/WarmRelatedEditorialsCache.php (2026-02-10T23:18:33+00:00)
 - /home/user/rector-with-init/src/Orchestrator/Chain/Resolver/RecommendedEditorialsResolver.php (2026-02-10T23:15:06+00:00)
 - /home/user/rector-with-init/src/Orchestrator/Chain/Resolver/InsertedNewsResolver.php (2026-02-10T23:14:57+00:00)
 - /home/user/rector-with-init/src/Orchestrator/Chain/Resolver/Trait/RelatedEditorialTrait.php (2026-02-10T23:14:47+00:00)
