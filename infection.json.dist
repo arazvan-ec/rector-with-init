@@ -1,0 +1,27 @@
+{
+    "timeout": 10,
+    "source": {
+        "directories": [
+            "src"
+        ]
+    },
+	"phpUnit": {
+		"customPath": ".\/bin\/phpunit"
+	},
+    "logs": {
+        "text": ".\/var\/infection\/infection.log",
+        "html": ".\/var\/infection\/infection.html"
+    },
+    "mutators": {
+        "@default": true,
+         "global-ignoreSourceCodeByRegex": [
+                        ".*\\#\\[OA\\\\Parameter.*",
+                        ".*\\#\\[OA\\\\Response.*",
+                        ".*\\#\\[OA\\\\Post.*",
+                        ".*\\#\\[OA\\\\Put.*",
+                        ".*\\#\\[OA\\\\Get.*",
+                        ".*\\#\\[OA\\\\Delete.*",
+                        ".*\\#\\[OA\\\\Patch.*"
+                    ]
+    }
+}

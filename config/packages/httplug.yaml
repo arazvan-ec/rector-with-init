@@ -1,0 +1,56 @@
+services:
+    retry.delay.time:
+        class: Ec\Infrastructure\Client\Http\DelayTimeRetry
+        arguments:
+            $time: '%env(int:SERVICE_HTTP_TIME_DELAY)%'
+
+    httplug.plugin.retry:
+        class: Http\Client\Common\Plugin\RetryPlugin
+        arguments:
+            $config:
+                retries: '%env(int:SERVICE_HTTP_RETRIES)%'
+                error_response_delay: ['@retry.delay.time','errorResponseDelay']
+                exception_delay: ['@retry.delay.time','exceptionDelay']
+
+httplug:
+    plugins:
+        retry:
+            retry: '%env(int:SERVICE_HTTP_RETRIES)%'
+        logger: ~
+        authentication:
+            elasticsearch_auth:
+                type: 'basic'
+                username: '%env(ELASTIC_USER)%'
+                password: '%env(ELASTIC_PASSWORD)%'
+
+    discovery:
+        client: 'auto'
+
+    clients:
+        monolog:
+            factory: 'httplug.factory.guzzle7'
+            http_methods_client: true
+            plugins:
+                - 'httplug.plugin.content_length'
+                - 'httplug.plugin.redirect'
+                - 'httplug.plugin.logger'
+                - 'httplug.plugin.authentication.elasticsearch_auth'
+                - 'httplug.plugin.retry'
+            config:
+                timeout: 2
+                headers:
+                    User-Agent: '%env(string:EC_USER_AGENT)%'
+                verify: false
+
+        app_guzzle7:
+            factory: 'httplug.factory.guzzle7'
+            http_methods_client: true
+            plugins:
+                - 'httplug.plugin.content_length'
+                - 'httplug.plugin.redirect'
+                - 'httplug.plugin.logger'
+                - 'httplug.plugin.authentication.elasticsearch_auth'
+                - 'httplug.plugin.retry'
+                - header_defaults:
+                    headers:
+                        'User-Agent': '%env(string:EC_USER_AGENT)%'

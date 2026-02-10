@@ -1,0 +1,15 @@
+v1:
+    resource: ./routes/v1.yaml
+    condition: "request.headers.get('Accept') matches '/application\\\\/vnd.%microserviceName%.v1/i'"
+    host: "{hostname}"
+    requirements:
+        hostname: "snaapi(-prod-[0-9]+)?.elconfidencial.(local|dev|pre|com|ims|efim)|ecsnaapi-service"
+
+currentVersion:
+    resource: ./routes/v1.yaml
+    host: "{hostname}"
+    requirements:
+        hostname: "snaapi(-prod-[0-9]+)?.elconfidencial.(dev|pre|com|ims|efim|local)|ecsnaapi-service"
+
+microservice:
+    resource: "@MicroserviceBundle/Resources/config/routing/base.yaml"

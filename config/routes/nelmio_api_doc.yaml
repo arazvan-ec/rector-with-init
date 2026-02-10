@@ -1,0 +1,20 @@
+# Expose your documentation as JSON swagger compliant
+app.swagger:
+    path: /api/doc.json
+    methods: GET
+    host: "{subdomain}.elconfidencial.{extension}"
+    defaults: { _controller: nelmio_api_doc.controller.swagger }
+    requirements:
+        subdomain: "snaapi(-prod-[0-9]+)?"
+        extension: "local|dev|pre|efim"
+
+## Requires the Asset component and the Twig bundle
+## $ composer require twig asset
+app.swagger_ui:
+    path: /api/doc
+    methods: GET
+    host: "{subdomain}.elconfidencial.{extension}"
+    defaults: { _controller: nelmio_api_doc.controller.swagger_ui }
+    requirements:
+        subdomain: "snaapi(-prod-[0-9]+)?"
+        extension: "local|dev|pre|efim"

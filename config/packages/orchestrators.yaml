@@ -1,0 +1,43 @@
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            $extension: '%env(URL_ENV)%'
+    App\Orchestrator\Chain\:
+        resource: '../../src/Orchestrator/Chain/'
+        tags: ['app.orchestrators']
+        exclude:
+            - '../../src/Orchestrator/Chain/Multimedia/'
+        lazy: true
+        shared: true
+
+    App\Orchestrator\OrchestratorChainHandler:
+        lazy: true
+        shared: true
+    App\Orchestrator\OrchestratorChain: '@App\Orchestrator\OrchestratorChainHandler'
+
+    # Multimedia Orchestration
+    App\Orchestrator\Chain\Multimedia\:
+        resource: '../../src/Orchestrator/Chain/Multimedia/'
+        exclude:
+            - '../../src/Orchestrator/Chain/Multimedia/MultimediaOrchestratorHandler.php'
+            - '../../src/Orchestrator/Chain/Multimedia/MultimediaOrchestratorChain.php'
+        tags: [ 'app.multimedia.orchestrators' ]
+
+    App\Orchestrator\Chain\Multimedia\MultimediaOrchestratorHandler: ~
+
+    App\Orchestrator\Chain\Multimedia\MultimediaOrchestratorChain: '@App\Orchestrator\Chain\Multimedia\MultimediaOrchestratorHandler'
+
+    App\Orchestrator\Chain\Multimedia\MultimediaWidgetOrchestrator:
+        tags: [ 'app.multimedia.orchestrators' ]
+        arguments:
+            $queryWidgetClient: '@Ec\Widget\Domain\Model\QueryWidgetClient'
+            $logger: '@logger'
+
+    App\Orchestrator\Chain\Multimedia\MultimediaPhotoOrchestrator:
+        tags: [ 'app.multimedia.orchestrators' ]
+        arguments:
+            $queryMultimediaClient: '@Ec\Multimedia\Infrastructure\Client\Http\Media\QueryMultimediaClient'
+            $logger: '@logger'

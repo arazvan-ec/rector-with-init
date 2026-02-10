@@ -1,0 +1,16 @@
+services:
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    Ec\Tag\Infrastructure\Client\Http\QueryTagClient:
+        lazy: true
+        shared: true
+        arguments:
+            $hostname: '%env(TAG_CLIENT_HOST)%'
+            $client: '@httplug.client.app_guzzle7.http_methods.inner'
+
+    Ec\Tag\Domain\Model\QueryTagClient: '@Ec\Tag\Infrastructure\Client\Http\QueryTagClient'
+
+    Ec\Tag\Application\Factories\TagFactory: ~
+    Ec\Tag\Domain\Model\TagFactory: '@Ec\Tag\Application\Factories\TagFactory'

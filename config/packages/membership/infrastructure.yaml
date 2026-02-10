@@ -1,0 +1,17 @@
+services:
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    Ec\Membership\Infrastructure\Client\Http\QueryMembershipClient:
+        lazy: true
+        shared: true
+        arguments:
+            $hostname: '%env(MEMBERSHIP_CLIENT_HOST)%'
+            $accessToken: '%env(MEMBERSHIP_ACCESS_TOKEN)%'
+            $client: '@httplug.client.app_guzzle7.http_methods.inner'
+
+    Ec\Membership\Domain\Model\QueryMembershipClient: '@Ec\Membership\Infrastructure\Client\Http\QueryMembershipClient'
+
+    Ec\Membership\Application\Service\MembershipFactory: ~
+    Ec\Membership\Domain\Model\MembershipFactory: '@Ec\Membership\Application\Service\MembershipFactory'

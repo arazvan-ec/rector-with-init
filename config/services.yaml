@@ -1,0 +1,48 @@
+# config/services.yaml
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+        bind:
+            $extension: '%env(URL_ENV)%'
+            $thumborServerUrl: '%env(THUMBOR_SERVER_URL)%'
+            $thumborSecret: '%env(THUMBOR_SECRET_KEY)%'
+            $awsBucket: '%env(STATICS_AWS_BUCKET)%'
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Orchestrator'
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Controller/V1/'
+            - '../src/Ec/Snaapi/Infrastructure/'
+            - '../src/Application/DataTransformer/Apps/Body/'
+            - '../src/Application/DataTransformer/Apps/Media/DataTransformers/'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    App\EventSubscriber\ExceptionSubscriber:
+        arguments:
+            $appEnv: '%env(APP_ENV)%'
+        tags: [ kernel.event_subscriber ]
+
+    # Controllers
+    App\Controller\V1\:
+        resource: '../src/Controller/V1/'
+        tags: [ 'controller.service_arguments' ]
+        exclude:
+            - '../src/Controller/V1/Schemas'
+
+    App\EventHandler\PurgeEditorialHandler:
+        class: App\EventHandler\PurgeEditorialHandler
+        arguments:
+            $hostname: '%env(APP_HOST)%'
+        tags:
+            - {name: 'messenger.message_handler', handles: 'Ec\Editorial\Domain\Model\EventEditorial', from_transport: snaapi}

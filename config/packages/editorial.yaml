@@ -1,0 +1,21 @@
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    Ec\Editorial\Infrastructure\Client\Http\QueryEditorialClient:
+        lazy: true
+        shared: true
+        arguments:
+            $hostname: '%env(EDITORIAL_CLIENT_HOST)%'
+            $client: '@httplug.client.app_guzzle7.http_methods.inner'
+
+    Ec\Editorial\Domain\Model\QueryEditorialClient: '@Ec\Editorial\Infrastructure\Client\Http\QueryEditorialClient'
+
+    Ec\Editorial\Application\Service\EditorialFactory: ~
+    Ec\Editorial\Domain\Model\EditorialFactory: '@Ec\Editorial\Application\Service\EditorialFactory'
+
+
+
+

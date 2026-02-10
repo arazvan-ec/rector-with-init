@@ -1,0 +1,21 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Ec\Widget\Application\Service\WidgetLegacyCreatorHandler: ~
+
+    Ec\Widget\Application\Service\WidgetFactory:
+        arguments:
+            $widgetCreatorHandler: '@Ec\Widget\Application\Service\WidgetLegacyCreatorHandler'
+
+    Ec\Widget\Domain\Model\WidgetFactory: '@Ec\Widget\Application\Service\WidgetFactory'
+
+    Ec\Widget\Infrastructure\Client\Http\QueryWidgetClient:
+        shared: true
+        arguments:
+            $hostname: '%env(WIDGET_CLIENT_HOST)%'
+            $factory: '@Ec\Widget\Domain\Model\WidgetFactory'
+            $client: '@httplug.client.app_guzzle7.http_methods.inner'
+
+    Ec\Widget\Domain\Model\QueryWidgetClient: '@Ec\Widget\Infrastructure\Client\Http\QueryWidgetClient'

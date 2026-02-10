@@ -1,0 +1,32 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Ec\Widget\Application\Service\Factories\:
+        resource: '../../../vendor/ec/widget-domain/src/Application/Service/Factories/'
+        exclude:
+            - '../../../vendor/ec/widget-domain/src/Application/Service/Factories/*Exception.php'
+            - '../../../vendor/ec/widget-domain/src/Application/Service/Factories/WidgetLegacyCreator.php'
+        tags: ['ec.widget.legacyCreator']
+
+    Ec\Widget\Application\Service\WidgetLegacyCreatorHandler:
+
+    # ========================================
+    # DATA TRANSFORMERS
+    # ========================================
+
+    App\Application\DataTransformer\Apps\Media\DataTransformers\Widget\Details\:
+        resource: '../../../src/Application/DataTransformer/Apps/Media/DataTransformers/Widget/Details/'
+        exclude: '../../../src/Application/DataTransformer/Apps/Media/DataTransformers/Widget/Details/WidgetTypeDataTransformer.php'
+        autowire: true
+        autoconfigure: true
+        tags: ['ec.widget.dataTransformer']
+
+    # Handler de transformadores
+    App\Application\DataTransformer\Apps\Media\DataTransformers\Widget\DetailWidgetDataTransformerHandler:
+        public: true
+        autowire: true
+
+    # Alias para el handler
+    App\Application\DataTransformer\Apps\Media\DataTransformers\Widget\DataTransformerHandler: '@App\Application\DataTransformer\Apps\Media\DataTransformers\Widget\DetailWidgetDataTransformerHandler'

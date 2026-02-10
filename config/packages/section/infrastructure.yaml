@@ -1,0 +1,16 @@
+services:
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    Ec\Section\Infrastructure\Client\Http\QuerySectionClient:
+        lazy: true
+        shared: true
+        arguments:
+            $hostname: '%env(SECTION_CLIENT_HOST)%'
+            $client: '@httplug.client.app_guzzle7.http_methods.inner'
+
+    Ec\Section\Domain\Model\QuerySectionClient: '@Ec\Section\Infrastructure\Client\Http\QuerySectionClient'
+
+    Ec\Section\Application\Factories\SectionFactory: ~
+    Ec\Section\Domain\Model\SectionFactory: '@Ec\Section\Application\Factories\SectionFactory'

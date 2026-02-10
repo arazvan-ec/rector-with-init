@@ -1,0 +1,47 @@
+services:
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+
+
+    Ec\Multimedia\Infrastructure\Client\Http\QueryMultimediaClient:
+        lazy: true
+        shared: true
+        parent: Ec\Multimedia\Infrastructure\Client\Http\QueryPhotoClient
+        arguments:
+            $hostname: '%env(MULTIMEDIA_CLIENT_HOST)%'
+            $client: '@httplug.client.app_guzzle7.http_methods.inner'
+
+    Ec\Multimedia\Infrastructure\Client\Http\QueryPhotoClient:
+        abstract: true
+
+    Ec\Multimedia\Domain\Model\QueryPhotoClient: '@Ec\Multimedia\Infrastructure\Client\Http\QueryPhotoClient'
+    Ec\Multimedia\Domain\Model\QueryMultimediaClient: '@Ec\Multimedia\Infrastructure\Client\Http\QueryMultimediaClient'
+
+    Ec\Multimedia\Application\Service\MultimediaFactory: ~
+    Ec\Multimedia\Domain\Model\MultimediaFactory: '@Ec\Multimedia\Application\Service\MultimediaFactory'
+
+    Ec\Multimedia\Infrastructure\Client\Http\Media\QueryMultimediaClient:
+        lazy: true
+        shared: true
+        parent: Ec\Multimedia\Infrastructure\Client\Http\QueryPhotoClient
+        arguments:
+            $hostname: '%env(MULTIMEDIA_CLIENT_HOST)%'
+            $factory: '@Ec\Multimedia\Application\Factory\Multimedia'
+            $client: '@httplug.client.app_guzzle7.http_methods.inner'
+
+
+    # Factory (latest version)
+    Ec\Multimedia\Application\Factory\Multimedia: ~
+    Ec\Multimedia\Domain\Model\Multimedia\MultimediaFactory: '@Ec\Multimedia\Application\Factory\Multimedia'
+
+    Ec\Multimedia\Application\Factory\:
+        resource: '../../../vendor/ec/multimedia-domain/src/Application/Factory/'
+        exclude:
+            - '../../../vendor/ec/multimedia-domain/src/Application/Factory/Multimedia.php'
+            - '../../../vendor/ec/multimedia-domain/src/Application/Factory/MultimediaStrategy.php'
+        tags: [ 'ec.multimedia.factory' ]
+
+
+

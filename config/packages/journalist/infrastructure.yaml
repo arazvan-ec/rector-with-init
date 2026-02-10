@@ -1,0 +1,16 @@
+services:
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    Ec\Journalist\Infrastructure\Client\Http\QueryJournalistClient:
+        lazy: true
+        shared: true
+        arguments:
+            $hostname: '%env(JOURNALIST_CLIENT_HOST)%'
+            $client: '@httplug.client.app_guzzle7.http_methods.inner'
+
+    Ec\Journalist\Domain\Model\QueryJournalistClient: '@Ec\Journalist\Infrastructure\Client\Http\QueryJournalistClient'
+
+    Ec\Journalist\Application\Factories\JournalistFactory: ~
+    Ec\Journalist\Domain\Model\JournalistFactory: '@Ec\Journalist\Application\Factories\JournalistFactory'

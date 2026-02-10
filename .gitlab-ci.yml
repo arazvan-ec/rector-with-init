@@ -1,0 +1,150 @@
+variables:
+    REGISTRY_HOST: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+    IMAGE_NAME: snaapi  # ONLY THING TO CHANGE IN EACH PROJECT
+    DOCKER_HOST: tcp://docker:2375
+    BACKEND_IMAGE_VERSION: v1
+
+default:
+    image:
+        name: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+    services:
+        - docker:dind
+
+stages:
+    - login
+    - tests
+    - build_ci
+    - qa_phase
+    - version
+    - create_release
+    - docker_remove_ci
+    - build_image
+    - launch_ephemeral
+    - synk
+    - bugfix
+    - hotfix
+    - create_mrs
+    - merge_release
+    - deploy_release
+
+workflow:
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "pipeline" && $CI_EC_ACTION == "create_release"
+        - if: $CI_PIPELINE_SOURCE == "pipeline" && $CI_EC_ACTION == "merge_release"
+        - if: $CI_PIPELINE_SOURCE == "pipeline" && $CI_EC_ACTION == "deploy_release"
+        - if: $CI_PIPELINE_SOURCE == "pipeline"
+          when: never
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TITLE =~ /^Draft.*$/
+          when: never
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "master"
+          when: never
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^release\/.*$/
+          when: never
+
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^feature\/.*$/
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^bugfix\/.*$/
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^hotfix\/.*$/
+
+        - if: $CI_COMMIT_TAG =~ /^.*-beta.*$/
+        - if: $CI_COMMIT_TAG =~ "/^v\d+\.\d+\.\d+-rc\.\d+$/" && $CI_COMMIT_TAG !~ "/^v\d+\.\d+\.\d+-rc\.1$/"
+        - if: $CI_COMMIT_TAG =~ "/^v\d+\.\d+\.\d+$/"
+        - if: $CI_COMMIT_TAG
+          when: never
+
+        - if: $CI_COMMIT_BRANCH == "develop"
+        - if: $CI_COMMIT_BRANCH == "master"
+        - if: $CI_COMMIT_BRANCH =~ /^release\/v.*$/
+        - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^bugfix\/.*$/
+        - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^hotfix\/.*$/
+
+        - if: $CI_COMMIT_BRANCH
+          when: never
+
+include:
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/php/ephemeral-flow.yml'
+      rules:
+          - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^feature\/.*$/
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/php/qa-services-flow.yml'
+      rules:
+          - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^bugfix\/.*$/
+          - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^hotfix\/.*$/
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/php/integration-flow.yml'
+      rules:
+          - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "develop"
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/release-flow.yml'
+      rules:
+          - if: $CI_COMMIT_TAG =~ /^.*-beta.*$/
+          - if: $CI_PIPELINE_SOURCE == "pipeline" && $CI_EC_ACTION == "create_release"
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/php/staging-flow.yml'
+      rules:
+          - if: $CI_COMMIT_BRANCH =~ /^release\/v.*$/
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/bugfix-flow.yml'
+      rules:
+          - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^bugfix\/.*$/
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/hotfix-flow.yml'
+      rules:
+          - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^hotfix\/.*$/
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/php/merged-master-flow.yml'
+      rules:
+          - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/synk-release-to-develop-flow.yml'
+      rules:
+          - if: $CI_COMMIT_TAG =~ "/^v\d+\.\d+\.\d+-rc\.\d+$/" && $CI_COMMIT_TAG !~ "/^v\d+\.\d+\.\d+-rc\.1$/"
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/services/php/deploy-flow.yml'
+      rules:
+          - if: $CI_COMMIT_TAG =~ "/^v\d+\.\d+\.\d+$/"
+          - if: $CI_PIPELINE_SOURCE == "pipeline" && $CI_EC_ACTION == "deploy_release"
+
+    - project: 'ec-awesomemakers1/templates/pipelines-shared'
+      ref: develop
+      file:
+          - 'flows/merge-to-master-flow.yml'
+      rules:
+          - if: $CI_PIPELINE_SOURCE == "pipeline" && $CI_EC_ACTION == "merge_release"
+
+mandatory_job_start:
+    image: alpine:latest
+    stage: .pre
+    script:
+        - echo "running with data $CI_COMMIT_REF_NAME and CI_PIPELINE_SOURCE $CI_PIPELINE_SOURCE and CI_EC_ACTION $CI_EC_ACTION"
+    rules:
+        - if: $RUN_DUMMY == "true"

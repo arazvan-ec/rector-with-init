@@ -1,0 +1,4 @@
+getEditorialById:
+    path: /editorials/{id}
+    controller: App\Controller\V1\EditorialController::getEditorialById
+    methods: GET

@@ -1,0 +1,42 @@
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+        bind:
+            $extension: '%env(URL_ENV)%'
+
+    App\Application\DataTransformer\Apps\AppsDataTransformer: '@App\Application\DataTransformer\Apps\DetailsAppsDataTransformer'
+
+    App\Application\DataTransformer\Apps\Body\:
+        resource: '../../src/Application/DataTransformer/Apps/Body/'
+        exclude:
+            - '../../src/Application/DataTransformer/Apps/Body/BodyTagVideoYoutubeDataTransformer'
+            - '../../src/Application/DataTransformer/Apps/Body/BodyTagVideoDataTransformer'
+        tags: [ 'app.data_transformer' ]
+        lazy: true
+        shared: true
+
+    App\Application\DataTransformer\Apps\Media\DataTransformers\:
+        resource: '../../src/Application/DataTransformer/Apps/Media/DataTransformers/'
+        tags: [ 'app.media_data_transformer' ]
+        lazy: true
+        shared: true
+
+    App\Application\DataTransformer\Apps\Body\BodyTagVideoYoutubeDataTransformer:
+        class: App\Application\DataTransformer\Apps\Body\BodyTagVideoYoutubeDataTransformer
+        arguments:
+            $playerHost: '%env(PLAYER_HOST)%'
+        tags: [ 'app.data_transformer' ]
+        lazy: true
+        shared: true
+
+    App\Application\DataTransformer\Apps\Body\BodyTagVideoDataTransformer:
+        class: App\Application\DataTransformer\Apps\Body\BodyTagVideoDataTransformer
+        arguments:
+            $playerHost: '%env(PLAYER_HOST)%'
+        tags: [ 'app.data_transformer' ]
+        lazy: true
+        shared: true
+

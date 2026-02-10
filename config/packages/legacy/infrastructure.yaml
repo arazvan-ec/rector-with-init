@@ -1,0 +1,13 @@
+services:
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # Ec
+    App\Ec\Snaapi\Infrastructure\Client\Http\QueryLegacyClient:
+        lazy: true
+        shared: true
+        arguments:
+            $hostname: '%env(string:LEGACY_HOST)%'
+            $legacyHostHeader: '%env(string:LEGACY_HOST_HEADER)%'
+            $client: '@httplug.client.app_guzzle7.http_methods.inner'

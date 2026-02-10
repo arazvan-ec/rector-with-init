@@ -1,0 +1,58 @@
+services:
+    snaapi:
+        image: hub.elconfidencial.clo/apache-fcgi:latest
+        container_name: snaapi
+        environment:
+            - APACHE_RUN_USER=${USER_ID}
+            - APACHE_RUN_GROUP=${GROUP_ID}
+            - ENV_DOMAIN=local
+            - APACHE_ENV=dev
+            - SERVICE_NAME=snaapi
+        ports:
+            - 80:8080
+            - 443:8443
+        volumes:
+            - ./public:/var/www/service/public
+            - snaapi_volume:/var/run/php
+    snaapi-php:
+        build:
+            dockerfile: ./Dockerfile
+            context: .
+            target: local
+            args:
+                - USER_ID=${USER_ID}
+                - GROUP_ID=${GROUP_ID}
+                - COMPOSER_AUTH_TOKEN=${COMPOSER_AUTH_TOKEN}
+        image: snaapi-php
+        container_name: snaapi-php
+        env_file:
+            - .docker.env
+        volumes:
+            - ./:/var/www/service
+            - snaapi_volume:/var/run/php
+        ports:
+            - 9025:9003
+        depends_on:
+            - blackfire
+    blackfire:
+        image: blackfire/blackfire:2
+        container_name: blackfire
+        environment:
+            - BLACKFIRE_LOG_LEVEL=4
+            - BLACKFIRE_SERVER_ID=${BLACKFIRE_SERVER_ID}
+            - BLACKFIRE_SERVER_TOKEN=${BLACKFIRE_SERVER_TOKEN}
+            - BLACKFIRE_CLIENT_ID=${BLACKFIRE_CLIENT_ID}
+            - BLACKFIRE_CLIENT_TOKEN=${BLACKFIRE_CLIENT_TOKEN}
+        ports:
+            - 8307:8307
+    rabbitmq:
+        image: hub.elconfidencial.clo/rabbitmq:latest
+        container_name: rabbitmq-service
+        ports:
+            - 5672:5672
+            - 15672:15672
+        volumes:
+            - rabbitmq_data:/var/lib/rabbitmq
+volumes:
+    snaapi_volume:
+    rabbitmq_data:

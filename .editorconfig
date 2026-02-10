@@ -1,0 +1,47 @@
+; top-most EditorConfig file
+root = true
+
+; Global EditorConfig
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+; Frontend EditorConfig
+[*.{css,js,jsx,html,less,scss}]
+indent_size = 2
+
+; JSON EditorConfig
+[*.json]
+indent_size = 2
+
+; Makefile EditorConfig
+[Makefile]
+indent_style = tab
+
+; PHP EditorConfig
+[*.php]
+indent_size = 4
+max_line_length = 120
+
+; Python EditorConfig
+[*.{py,python}]
+indent_style = space
+indent_size = 4
+
+; Shell EditorConfig
+[*.sh]
+indent_style = tab
+indent_size = 4
+
+; XML EditorConfig
+[*.xml]
+indent_style = tab
+indent_size = 4
+
+; YAML EditorConfig
+[*.{yml,yaml}]
+indent_size = 4

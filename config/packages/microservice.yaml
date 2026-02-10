@@ -1,0 +1,10 @@
+microservice:
+    name: 'snaapi'
+    code_version: '1df11c8'
+    debug: false
+    manage_exceptions: true
+    base_routes: ''
+    versions:
+        list:
+            - 'v1.0.0'
+        current: 'v1.0.0'

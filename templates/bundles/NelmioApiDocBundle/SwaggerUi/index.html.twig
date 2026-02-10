@@ -1,0 +1,42 @@
+{% extends '@!NelmioApiDoc/SwaggerUi/index.html.twig' %}
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        header:before {
+            content:"";
+            background-color: white;
+            height:70px;
+            width:100%;
+            text-align:center;
+            position:fixed;
+            top:0;
+            z-index:100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+        header #logo img {
+            height:48px;
+            background-color:rgba(0, 0, 0, 0)
+        }
+    </style>
+{% endblock stylesheets %}
+{% block header_block%}
+<header>
+    <a id="logo" href="#">
+        <img src="https://static.ecestaticos.com/file/0be/042/580/0be042580f4f0f53813bd70f7984033c.svg" alt="NelmioApiDocBundle">
+    </a>
+</header>
+{% endblock header_block %}
+
+{% block swagger_initialization %}
+    {% if app_environment == 'prod' %}
+        <script type="text/javascript">
+            (function () {
+                var swaggerUI = {{ swagger_ui_config|json_encode(65)|raw }};
+                swaggerUI.supportedSubmitMethods = [];
+                window.onload = loadSwaggerUI(swaggerUI);
+            })();
+        </script>
+    {% else %}
+            {{ parent() }}
+    {% endif %}
+{% endblock %}

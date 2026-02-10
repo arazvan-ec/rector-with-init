@@ -1,0 +1,13 @@
+when@dev: &dev
+    nelmio_api_doc:
+        documentation:
+            info:
+                title: Snaapi Api
+                description: An api to dominate editorials
+                version: 1.0.0
+        areas: # to filter documented areas
+            path_patterns:
+                - /healthcheck_cdn
+                - /editorials
+
+when@test: *dev

@@ -1,0 +1,69 @@
+# config/packages/messenger.yaml
+framework:
+    messenger:
+        default_bus: cms.messenger.bus
+        buses:
+            cms.messenger.bus:
+            editorial.event.bus:
+
+        failure_transport: failed_messages
+
+        transports:
+            snaapi:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    auto_setup: true
+                    sasl_method: 0
+                    verify: false
+                    exchange:
+                        name: exchange::events
+                        type: topic
+                    delay:
+                        exchange_name: exchange::events::delay
+                    queues:
+                        queue::event::snaapi:
+                            binding_keys:
+                                - "editorial::event"
+
+                    transport_name: snaapi
+
+                retry_strategy:
+                    max_retries: 0
+
+                failure_transport: failed_messages
+
+            warmup:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    auto_setup: true
+                    sasl_method: 0
+                    verify: false
+                    exchange:
+                        name: exchange::commands
+                        type: direct
+                    queues:
+                        queue::commands::messenger::warmup:
+                            binding_keys:
+                                - "warmup::messenger"
+
+                    transport_name: warmup
+
+            failed_messages:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    auto_setup: true
+                    sasl_method: 0
+                    verify: false
+                    exchange:
+                        name: exchange::events::errors
+                        type: topic
+                    queues:
+                        queue::event::snaapi::error:
+                            binding_keys:
+                                - "queue::event::snaapi"
+
+                    transport_name: failed_messages
+
+        routing:
+            Ec\Cqrs\Messages\CommandNotification: warmup
+            Ec\Editorial\Domain\Model\EventEditorial: snaapi
