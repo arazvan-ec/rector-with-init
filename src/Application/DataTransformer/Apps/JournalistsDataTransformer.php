@@ -6,7 +6,7 @@
 
 namespace App\Application\DataTransformer\Apps;
 
-use App\Infrastructure\Service\Thumbor;
+use App\Infrastructure\Service\MultimediaShotService;
 use App\Infrastructure\Trait\UrlGeneratorTrait;
 use Ec\Encode\Encode;
 use Ec\Journalist\Domain\Model\Alias;
@@ -29,7 +29,7 @@ class JournalistsDataTransformer
 
     public function __construct(
         string $extension,
-        private readonly Thumbor $thumbor,
+        private readonly MultimediaShotService $multimediaShotService,
     ) {
         $this->setExtension($extension);
     }
@@ -74,8 +74,10 @@ class JournalistsDataTransformer
                     $signature['url'] = $this->journalistUrl($this->journalist);
                 }
 
-                $photo = $this->photoUrl($this->journalist);
-                $signature['photo'] = $photo;
+                $signature['photo'] = $this->multimediaShotService->generateJournalistPhoto(
+                    $this->journalist->blogPhoto(),
+                    $this->journalist->photo()
+                );
 
                 $departments = [];
                 /** @var Department $department */
@@ -105,19 +107,6 @@ class JournalistsDataTransformer
             $this->section->siteId(),
             \sprintf('%s-%s', Encode::encodeUrl($journalist->name()), $journalist->id()->id())
         );
-    }
-
-    private function photoUrl(Journalist $journalist): string
-    {
-        if (!empty($journalist->blogPhoto())) {
-            return $this->thumbor->createJournalistImage($journalist->blogPhoto());
-        }
-
-        if (!empty($journalist->photo())) {
-            return $this->thumbor->createJournalistImage($journalist->photo());
-        }
-
-        return '';
     }
 
     private function withAt(string $twitter): string

@@ -73,7 +73,7 @@ class DetailsAppsDataTransformer implements AppsDataTransformer
         return
             [
                 'id' => $this->editorial->id()->id(),
-                'url' => $this->editorialUrl(),
+                'url' => $this->editorialUrl($this->editorial, $this->section),
                 'titles' => [
                     'title' => $this->editorial->editorialTitles()->title(),
                     'preTitle' => $this->editorial->editorialTitles()->preTitle(),
@@ -102,24 +102,6 @@ class DetailsAppsDataTransformer implements AppsDataTransformer
             ];
     }
 
-    private function editorialUrl(): string
-    {
-        $editorialPath = \sprintf(
-            '%s/%s/%s_%s',
-            $this->section->getPath(),
-            $this->editorial->publicationDate()->format('Y-m-d'),
-            Encode::encodeUrl($this->editorial->editorialTitles()->urlTitle()),
-            $this->editorial->id()->id()
-        );
-
-        return $this->generateUrl(
-            'https://%s.%s.%s/%s',
-            $this->section->isSubdomainBlog() ? 'blog' : 'www',
-            $this->section->siteId(),
-            $editorialPath
-        );
-    }
-
     /**
      * @param Section|null $section
      *
@@ -135,17 +117,11 @@ class DetailsAppsDataTransformer implements AppsDataTransformer
         if (null === $section) {
             $section = $this->section;
         }
-        $url = $this->generateUrl(
-            'https://%s.%s.%s/%s',
-            $section->isSubdomainBlog() ? 'blog' : 'www',
-            $section->siteId(),
-            $section->getPath()
-        );
 
         return [
             'id' => $section->id()->id(),
             'name' => $section->name(),
-            'url' => $url,
+            'url' => $this->sectionUrl($section),
             'encodeName' => $section->encodeName(),
         ];
     }

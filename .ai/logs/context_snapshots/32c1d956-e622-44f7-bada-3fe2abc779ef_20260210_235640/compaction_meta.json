@@ -1,0 +1,10 @@
+{
+    "timestamp": "2026-02-10T23:56:40+00:00",
+    "session_id": "32c1d956-e622-44f7-bada-3fe2abc779ef",
+    "message_count": 0,
+    "token_count": 0,
+    "current_role": "unknown",
+    "current_status": "unknown",
+    "current_checkpoint": "none",
+    "type": "pre_compact_snapshot"
+}
