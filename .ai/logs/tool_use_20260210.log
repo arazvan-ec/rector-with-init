@@ -75,3 +75,5 @@
 [2026-02-10T23:18:38+00:00] session=01e642eb-791e-40e6-bfc8-7f399d79c69a tool=Write file=/home/user/rector-with-init/src/Infrastructure/Messenger/Handler/WarmRelatedEditorialsCacheHandler.php trust=high action=ALLOWED
 [2026-02-10T23:21:32+00:00] session=01e642eb-791e-40e6-bfc8-7f399d79c69a tool=Edit file=/home/user/rector-with-init/src/Application/DataTransformer/Apps/DetailsAppsDataTransformer.php trust=high action=ALLOWED
 [2026-02-10T23:21:57+00:00] session=01e642eb-791e-40e6-bfc8-7f399d79c69a tool=Edit file=/home/user/rector-with-init/.ai/project/features/editorial-refactoring/50_state.md trust=high action=ALLOWED
+[2026-02-10T23:59:09+00:00] session=32c1d956-e622-44f7-bada-3fe2abc779ef tool=Write file=/home/user/rector-with-init/src/Orchestrator/Chain/Resolver/InsertedNewsResolver.php trust=high action=ALLOWED
+[2026-02-10T23:59:28+00:00] session=32c1d956-e622-44f7-bada-3fe2abc779ef tool=Write file=/home/user/rector-with-init/src/Orchestrator/Chain/Resolver/RecommendedEditorialsResolver.php trust=high action=ALLOWED

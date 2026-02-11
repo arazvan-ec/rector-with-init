@@ -52,12 +52,6 @@
 See [FEATURE_editorial-refactoring.md](./FEATURE_editorial-refactoring.md) for full decision table.
 
 ### Modified Files (Auto-tracked)
-- /home/user/rector-with-init/tests/Orchestrator/Chain/Resolver/InsertedNewsResolverTest.php (2026-02-11T00:19:33+00:00)
-- /home/user/rector-with-init/tests/Orchestrator/Chain/Resolver/RecommendedEditorialsResolverTest.php (2026-02-11T00:17:41+00:00)
-- /home/user/rector-with-init/tests/Orchestrator/Chain/EditorialOrchestratorTest.php (2026-02-11T00:14:12+00:00)
-- /home/user/rector-with-init/tests/Orchestrator/Chain/Resolver/MultimediaResolverTest.php (2026-02-11T00:12:54+00:00)
-- /home/user/rector-with-init/tests/Orchestrator/Chain/Resolver/SignatureResolverTest.php (2026-02-11T00:11:23+00:00)
-- /home/user/rector-with-init/tests/Orchestrator/Chain/Resolver/MembershipLinkResolverTest.php (2026-02-11T00:11:02+00:00)
 - /home/user/rector-with-init/src/Infrastructure/Messenger/Handler/WarmRelatedEditorialsCacheHandler.php (2026-02-10T23:18:38+00:00)
 - /home/user/rector-with-init/src/Infrastructure/Messenger/Message/WarmRelatedEditorialsCache.php (2026-02-10T23:18:33+00:00)
 - /home/user/rector-with-init/src/Orchestrator/Chain/Resolver/RecommendedEditorialsResolver.php (2026-02-10T23:15:06+00:00)
